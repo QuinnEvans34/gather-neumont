@@ -33,8 +33,7 @@ export async function getUserByUsername(
   username: string
 ): Promise<UserRecord | undefined> {
   const data = await ensureUsersFile();
-  const target = username.toLowerCase();
-  return data.users.find((user) => user.username.toLowerCase() === target);
+  return data.users.find((user) => user.username === username);
 }
 
 export async function getUserById(id: string): Promise<UserRecord | undefined> {
@@ -42,20 +41,8 @@ export async function getUserById(id: string): Promise<UserRecord | undefined> {
   return data.users.find((user) => user.id === id);
 }
 
-export async function getAllUsers(): Promise<UserRecord[]> {
-  const data = await ensureUsersFile();
-  return data.users ?? [];
-}
-
 export async function createUser(username: string): Promise<UserRecord | null> {
   const data = await ensureUsersFile();
-  const target = username.toLowerCase();
-  const existing = data.users.find(
-    (user) => user.username.toLowerCase() === target
-  );
-  if (existing) {
-    return existing;
-  }
   const user: UserRecord = {
     id: crypto.randomUUID(),
     username,
