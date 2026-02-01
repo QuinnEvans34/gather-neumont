@@ -1,0 +1,53 @@
+{
+  "version": 1,
+  "questions": [
+    {
+      "id": "q001",
+      "type": "mcq",
+      "prompt": "What is the time complexity of binary search on a sorted array of n elements?",
+      "choices": [
+        "O(1)",
+        "O(log n)",
+        "O(n)",
+        "O(n log n)"
+      ],
+      "correctIndex": 1,
+      "explanation": "Binary search divides the search space in half with each comparison, resulting in logarithmic time complexity.",
+      "difficulty": 1,
+      "tags": ["algorithms", "search", "complexity"],
+      "basePoints": 100
+    },
+    {
+      "id": "q002",
+      "type": "select-all",
+      "prompt": "Which of the following are valid HTTP methods? (Select all that apply)",
+      "choices": [
+        "GET",
+        "POST",
+        "FETCH",
+        "DELETE",
+        "SEND"
+      ],
+      "correctIndices": [0, 1, 3],
+      "explanation": "GET, POST, and DELETE are standard HTTP methods. FETCH and SEND are not valid HTTP methods (though 'fetch' is a JavaScript API).",
+      "difficulty": 2,
+      "tags": ["web", "http", "networking"],
+      "basePoints": 150
+    },
+    {
+      "id": "q003",
+      "type": "written",
+      "prompt": "In Git, what command is used to create a new branch and switch to it in one step?",
+      "acceptedAnswers": [
+        "git checkout -b",
+        "git switch -c",
+        "checkout -b",
+        "switch -c"
+      ],
+      "explanation": "Both 'git checkout -b <branch>' and the newer 'git switch -c <branch>' create and switch to a new branch in one command.",
+      "difficulty": 2,
+      "tags": ["git", "version-control", "tools"],
+      "basePoints": 125
+    }
+  ]
+}
