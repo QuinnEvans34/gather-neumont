@@ -1,45 +1,4 @@
 {
   "version": 1,
-  "schedule": [
-    {
-      "dateKey": "2026-02-01",
-      "questionId": "q001",
-      "assignedAt": "2026-02-01T20:36:52.304Z"
-    },
-    {
-      "dateKey": "2026-02-02",
-      "questionId": "q001",
-      "assignedAt": "2026-02-01T21:36:28.246Z"
-    },
-    {
-      "dateKey": "2026-02-03",
-      "questionId": "q001",
-      "assignedAt": "2026-02-01T21:36:36.301Z"
-    },
-    {
-      "dateKey": "2026-02-07",
-      "questionId": "q002",
-      "assignedAt": "2026-02-07T21:12:57.562Z"
-    },
-    {
-      "dateKey": "2026-02-08",
-      "questionId": "q003",
-      "assignedAt": "2026-02-08T18:28:21.119Z"
-    },
-    {
-      "dateKey": "2026-02-15",
-      "questionId": "q004",
-      "assignedAt": "2026-02-16T05:59:55.747Z"
-    },
-    {
-      "dateKey": "2026-02-16",
-      "questionId": "0JNCYfgz3A6CcuJt4HCC_q0",
-      "assignedAt": "2026-02-16T19:08:23.226Z"
-    },
-    {
-      "dateKey": "2026-02-17",
-      "questionId": "qRw9ZVMS7FLpC8Vb2W1p_q0",
-      "assignedAt": "2026-02-18T00:11:08.307Z"
-    }
-  ]
+  "schedule": []
 }
