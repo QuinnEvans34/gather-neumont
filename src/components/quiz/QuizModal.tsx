@@ -14,6 +14,8 @@ interface QuizModalProps {
   isOpen: boolean;
   onClose: () => void;
   isAdmin?: boolean;
+  initialTab?: Tab;
+  onViewLeaderboard?: () => void;
 }
 
 type Tab = "quiz" | "admin" | "questions" | "schedule";
@@ -105,7 +107,13 @@ const EMPTY_SELECT_CHOICES = ["", "", "", "", ""];
 const RANGE_OPTIONS = ["week", "month", "year"] as const;
 type RangeOption = typeof RANGE_OPTIONS[number];
 
-export function QuizModal({ isOpen, onClose, isAdmin = false }: QuizModalProps) {
+export function QuizModal({
+  isOpen,
+  onClose,
+  isAdmin = false,
+  initialTab,
+  onViewLeaderboard,
+}: QuizModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>("quiz");
   const [mode, setMode] = useState<"daily" | "test">("daily");
   const [adminQuestions, setAdminQuestions] = useState<Question[]>([]);
@@ -136,6 +144,16 @@ export function QuizModal({ isOpen, onClose, isAdmin = false }: QuizModalProps) 
     Record<string, string>
   >({});
   const quiz = useQuiz();
+
+  useEffect(() => {
+    if (isOpen && isAdmin && initialTab) {
+      setActiveTab(initialTab);
+    }
+    if (isOpen && !isAdmin) {
+      setActiveTab("quiz");
+    }
+  }, [isOpen, isAdmin, initialTab]);
+
 
   useEffect(() => {
     if (!isAdmin && activeTab !== "quiz") {
@@ -330,6 +348,10 @@ export function QuizModal({ isOpen, onClose, isAdmin = false }: QuizModalProps) 
     setSequenceMessage(null);
     quiz.reset();
     setActiveTab("quiz");
+  };
+
+  const handleViewLeaderboard = () => {
+    onViewLeaderboard?.();
   };
 
   const getTruncatedPrompt = (prompt: string) => {
@@ -859,6 +881,7 @@ export function QuizModal({ isOpen, onClose, isAdmin = false }: QuizModalProps) 
           correctIndices={quiz.lastResult.correctIndices}
           acceptedAnswers={quiz.lastResult.acceptedAnswers}
           attemptNumber={quiz.attemptNumber}
+          onViewLeaderboard={onViewLeaderboard ? handleViewLeaderboard : undefined}
         />
       );
     }
@@ -1286,7 +1309,7 @@ export function QuizModal({ isOpen, onClose, isAdmin = false }: QuizModalProps) 
                       <span>{entry?.questionId ?? "-"}</span>
                       <span>
                         {question
-                          ? getPromptPreview(question.prompt)
+                          ? `${entry?.questionId} — ${getPromptPreview(question.prompt)}`
                           : "No question selected"}
                       </span>
                       <span className="quiz-admin-status-cell">

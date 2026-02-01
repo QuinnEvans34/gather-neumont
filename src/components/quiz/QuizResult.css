@@ -122,3 +122,8 @@
   color: #e0e0e0;
   line-height: 1.5;
 }
+
+.quiz-result-actions {
+  display: flex;
+  justify-content: center;
+}

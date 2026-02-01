@@ -25,6 +25,7 @@ import { checkAnswer } from "../services/answer-checker.service";
 import { calculatePoints } from "../services/scoring.service";
 import type { Question } from "../../types/quiz.types";
 import { getUserIdFromRequest } from "./auth";
+import { getUserById } from "../data/users.store";
 
 const userAttemptCounts = new Map<string, number>();
 
@@ -47,9 +48,12 @@ export async function handleGetToday(req: Request): Promise<Response> {
   const dateKey = getMountainDateKey();
   const question = await getQuestionForDate(dateKey);
   const sessionUserId = getUserIdFromRequest(req);
-  const progress = sessionUserId
-    ? await getProgressByUserId(sessionUserId)
-    : undefined;
+  const user = sessionUserId ? await getUserById(sessionUserId) : undefined;
+  const isAdmin = !!user?.isAdmin;
+  const progress =
+    sessionUserId && !isAdmin
+      ? await getProgressByUserId(sessionUserId)
+      : undefined;
   const lastCompletion =
     progress?.lastCompletion && progress.lastCompletion.date === dateKey
       ? progress.lastCompletion
@@ -99,6 +103,8 @@ export async function handleStartQuiz(req: Request): Promise<Response> {
   const sessionUserId = getUserIdFromRequest(req);
   const resolvedUserId = sessionUserId ?? null;
   const resolvedGuestToken = resolvedUserId ? null : guestToken?.trim();
+  const resolvedUser = resolvedUserId ? await getUserById(resolvedUserId) : null;
+  const isAdmin = !!resolvedUser?.isAdmin;
 
   if (!resolvedUserId && !resolvedGuestToken) {
     return Response.json(
@@ -131,7 +137,7 @@ export async function handleStartQuiz(req: Request): Promise<Response> {
     }
   }
 
-  if (resolvedUserId) {
+  if (resolvedUserId && !isAdmin) {
     const progress = await getProgressByUserId(resolvedUserId);
     if (progress?.lastCompletion?.date === dateKey) {
       console.log(
@@ -207,6 +213,8 @@ export async function handleSubmitQuiz(req: Request): Promise<Response> {
   const sessionUserId = getUserIdFromRequest(req);
   const resolvedUserId = sessionUserId ?? null;
   const resolvedGuestToken = resolvedUserId ? null : guestToken?.trim();
+  const resolvedUser = resolvedUserId ? await getUserById(resolvedUserId) : null;
+  const isAdmin = !!resolvedUser?.isAdmin;
 
   // Validate required fields
   if (!resolvedUserId && !resolvedGuestToken) {
@@ -268,7 +276,7 @@ export async function handleSubmitQuiz(req: Request): Promise<Response> {
     });
   }
 
-  if (resolvedUserId) {
+  if (resolvedUserId && !isAdmin) {
     const progress = await getProgressByUserId(resolvedUserId);
     if (progress?.lastCompletion?.date === dateKey) {
       console.log(
@@ -302,9 +310,9 @@ export async function handleSubmitQuiz(req: Request): Promise<Response> {
         elapsedMs: null,
       });
     }
-    if (resolvedUserId) {
-      userAttemptCounts.set(getAttemptKey(resolvedUserId, dateKey), attemptNumber);
-    }
+  if (resolvedUserId) {
+    userAttemptCounts.set(getAttemptKey(resolvedUserId, dateKey), attemptNumber);
+  }
 
     // Build feedback based on question type
     const feedback: Record<string, unknown> = {};
@@ -341,7 +349,7 @@ export async function handleSubmitQuiz(req: Request): Promise<Response> {
       elapsedMs,
     });
   }
-  if (resolvedUserId) {
+  if (resolvedUserId && !isAdmin) {
     const progress = await getOrCreateProgress(resolvedUserId);
     const previousDateKey = getPreviousDateKey(dateKey);
     const currentStreak =
@@ -365,6 +373,8 @@ export async function handleSubmitQuiz(req: Request): Promise<Response> {
       },
     };
     await saveProgress(updated);
+  }
+  if (resolvedUserId) {
     userAttemptCounts.delete(getAttemptKey(resolvedUserId, dateKey));
   }
 
