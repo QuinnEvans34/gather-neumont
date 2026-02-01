@@ -1,0 +1,41 @@
+/* Written Response Styles */
+
+.written-response-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.written-response-input {
+  width: 100%;
+  padding: 16px 18px;
+  background: #1c1c1c;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  color: #e0e0e0;
+  font-size: 16px;
+  font-family: system-ui, -apple-system, sans-serif;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.written-response-input:focus {
+  border-color: rgba(233, 69, 96, 0.5);
+}
+
+.written-response-input::placeholder {
+  color: #666;
+}
+
+.written-response-input.incorrect {
+  border-color: rgba(233, 69, 96, 0.8);
+  background: rgba(233, 69, 96, 0.1);
+}
+
+.written-response-input.shake {
+  animation: shake 0.25s ease-in-out;
+}
+
+.written-response-input:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}

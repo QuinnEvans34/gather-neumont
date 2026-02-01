@@ -1,45 +1,54 @@
 import { useState } from "react";
+import { QuizModal } from "../components/quiz/QuizModal";
 import "./QuizDevPage.css";
 
-type Tab = "quiz" | "admin";
-
 export default function QuizDevPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("quiz");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<"quiz" | "admin">("quiz");
 
   return (
     <div className="quiz-dev-page">
       <header className="quiz-dev-header">
-        <h1>Quiz Dev Mode</h1>
-        <nav className="quiz-dev-tabs">
+        <div className="quiz-dev-tabs" role="tablist" aria-label="Dev tabs">
           <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "quiz"}
             className={`quiz-dev-tab ${activeTab === "quiz" ? "active" : ""}`}
             onClick={() => setActiveTab("quiz")}
           >
             Quiz
           </button>
           <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "admin"}
             className={`quiz-dev-tab ${activeTab === "admin" ? "active" : ""}`}
             onClick={() => setActiveTab("admin")}
           >
             Admin
           </button>
-        </nav>
+        </div>
       </header>
 
       <main className="quiz-dev-content">
-        {activeTab === "quiz" && (
-          <div className="quiz-dev-placeholder">
-            <h2>Quiz Tab</h2>
-            <p>Quiz functionality coming in Commit 5</p>
-          </div>
-        )}
-        {activeTab === "admin" && (
-          <div className="quiz-dev-placeholder">
-            <h2>Admin Tab</h2>
-            <p>Admin functionality coming in Commit 10</p>
-          </div>
-        )}
+        <div className="quiz-dev-placeholder">
+          <h2>Daily Quiz</h2>
+          <p>
+            {activeTab === "quiz"
+              ? "Test the quiz experience as a guest user"
+              : "Admin tools live inside the quiz modal for now"}
+          </p>
+          <button
+            className="quiz-dev-open-btn"
+            onClick={() => setIsModalOpen(true)}
+          >
+            Open Daily Quiz
+          </button>
+        </div>
       </main>
+
+      <QuizModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   );
 }
