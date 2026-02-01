@@ -306,7 +306,11 @@ export default function QuizDevPage() {
         </div>
       </main>
 
-      <QuizModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <QuizModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        isAdmin={!!authUser?.isAdmin}
+      />
     </div>
   );
 }

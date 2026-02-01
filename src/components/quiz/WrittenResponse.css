@@ -39,3 +39,35 @@
   opacity: 0.7;
   cursor: not-allowed;
 }
+
+.written-response-answers {
+  margin-top: 16px;
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(80, 200, 120, 0.3);
+  background: rgba(80, 200, 120, 0.08);
+}
+
+.written-response-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #7be0a1;
+  margin-bottom: 8px;
+}
+
+.written-response-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.written-response-pill {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(80, 200, 120, 0.15);
+  color: #e2f5eb;
+  font-size: 12px;
+}

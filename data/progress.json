@@ -1,4 +1,20 @@
 {
   "version": 1,
-  "progress": []
+  "progress": [
+    {
+      "userId": "47330dc4-df72-4cc4-9869-66acdf1c13da",
+      "currentStreak": 1,
+      "longestStreak": 1,
+      "totalPoints": 172,
+      "lastCorrectDate": "2026-02-01",
+      "lastCompletion": {
+        "date": "2026-02-01",
+        "questionId": "q001",
+        "attemptsUsed": 1,
+        "pointsEarned": 172,
+        "completedAt": "2026-02-01T20:36:57.475Z",
+        "elapsedMs": 5137
+      }
+    }
+  ]
 }
