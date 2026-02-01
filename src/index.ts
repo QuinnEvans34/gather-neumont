@@ -107,10 +107,23 @@ function spaIndex(): Response {
   });
 }
 
+function apiHandler(req: Request): Response {
+  return Response.json(
+    { error: "Not found", path: new URL(req.url).pathname },
+    { status: 404 }
+  );
+}
+
 const server = serve({
-  port: 3000,
-  async fetch(req) {
-    const url = new URL(req.url);
+  routes: {
+    // API routes return JSON
+    "/api/*": apiHandler,
+    // Serve index.html for all unmatched routes.
+    "/*": index,
+  },
+  development: process.env.NODE_ENV !== "production" && {
+    // Enable browser hot reloading in development
+    hmr: true,
 
     if (url.pathname.startsWith("/api/")) return apiHandler(req);
     if (url.pathname.startsWith("/assets/")) return assetsHandler(req);

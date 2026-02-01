@@ -2,7 +2,19 @@
   "permissions": {
     "allow": [
       "mcp__MCP_DOCKER__browser_click",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(unzip:*)",
+      "WebFetch(domain:bun.com)",
+      "Bash(bun dev)",
+      "Bash(curl:*)",
+      "Bash(bun install:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(netstat:*)",
+      "Bash(lsof:*)",
+      "Bash(fuser:*)",
+      "Bash(ss:*)",
+      "Bash(pkill:*)",
+      "Bash(cmd.exe /c \"netstat -ano | findstr :3000\")"
     ]
   }
 }
