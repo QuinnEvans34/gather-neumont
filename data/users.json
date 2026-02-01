@@ -1,21 +1,4 @@
 {
   "version": 1,
-  "users": [
-    {
-      "id": "5ae67360-5d2f-48bc-888c-c92b83e9a6d1",
-      "username": "qevans",
-      "createdAt": "2026-02-01T17:29:29.738Z"
-    },
-    {
-      "id": "00a21fe8-68e9-4cc0-8f5a-fb7f98cdd8f7",
-      "username": "dev_user",
-      "createdAt": "2026-02-01T17:30:06.572Z"
-    },
-    {
-      "id": "a7082f46-09cd-400b-9663-d5d15fa98639",
-      "username": "qevans1",
-      "isAdmin": false,
-      "createdAt": "2026-02-01T19:02:53.870Z"
-    }
-  ]
+  "users": []
 }

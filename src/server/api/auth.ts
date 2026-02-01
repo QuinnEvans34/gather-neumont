@@ -16,7 +16,6 @@ const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 interface SessionRecord {
   userId: string;
   createdAt: Date;
-  lastSeenAt: Date;
 }
 
 const sessions = new Map<string, SessionRecord>();
@@ -41,7 +40,7 @@ function getSessionToken(req: Request): string | null {
 function createSession(userId: string): string {
   const token = crypto.randomUUID();
   const now = new Date();
-  sessions.set(token, { userId, createdAt: now, lastSeenAt: now });
+  sessions.set(token, { userId, createdAt: now });
   return token;
 }
 
@@ -103,7 +102,6 @@ async function handleMe(req: Request): Promise<Response> {
   }
 
   user = await ensureAdminFlag(user);
-  session.lastSeenAt = new Date();
   return jsonWithCookie(
     { user: { id: user.id, username: user.username, isAdmin: !!user.isAdmin } },
     buildSessionCookie(token, SESSION_MAX_AGE_SECONDS)
@@ -124,7 +122,6 @@ export function getUserIdFromRequest(req: Request): string | null {
   if (!token) return null;
   const session = sessions.get(token);
   if (!session) return null;
-  session.lastSeenAt = new Date();
   return session.userId;
 }
 

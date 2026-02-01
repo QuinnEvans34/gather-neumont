@@ -16,21 +16,27 @@ import {
   getGuestAttempt,
   updateGuestAttempt,
 } from "../data/guest-sessions";
+import {
+  getProgressByUserId,
+  getOrCreateProgress,
+  saveProgress,
+} from "../data/progress.store";
 import { checkAnswer } from "../services/answer-checker.service";
 import { calculatePoints } from "../services/scoring.service";
 import type { Question } from "../../types/quiz.types";
 import { getUserIdFromRequest } from "./auth";
 
-const userCompletions = new Map<string, Set<string>>();
+const userAttemptCounts = new Map<string, number>();
 
-function hasUserCompleted(userId: string, dateKey: string): boolean {
-  return userCompletions.get(userId)?.has(dateKey) ?? false;
+function getAttemptKey(userId: string, dateKey: string): string {
+  return `${userId}|${dateKey}`;
 }
 
-function markUserCompleted(userId: string, dateKey: string): void {
-  const existing = userCompletions.get(userId) ?? new Set<string>();
-  existing.add(dateKey);
-  userCompletions.set(userId, existing);
+function getPreviousDateKey(dateKey: string): string {
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() - 1);
+  return date.toISOString().slice(0, 10);
 }
 
 /**
@@ -40,6 +46,14 @@ function markUserCompleted(userId: string, dateKey: string): void {
 export async function handleGetToday(req: Request): Promise<Response> {
   const dateKey = getMountainDateKey();
   const question = await getQuestionForDate(dateKey);
+  const sessionUserId = getUserIdFromRequest(req);
+  const progress = sessionUserId
+    ? await getProgressByUserId(sessionUserId)
+    : undefined;
+  const lastCompletion =
+    progress?.lastCompletion && progress.lastCompletion.date === dateKey
+      ? progress.lastCompletion
+      : null;
 
   if (!question) {
     return Response.json({
@@ -53,6 +67,14 @@ export async function handleGetToday(req: Request): Promise<Response> {
     hasQuiz: true,
     quizDate: dateKey,
     questionId: question.id,
+    ...(lastCompletion
+      ? {
+          alreadyCompleted: true,
+          attemptsUsed: lastCompletion.attemptsUsed,
+          pointsEarned: lastCompletion.pointsEarned,
+          completedAt: lastCompletion.completedAt,
+        }
+      : {}),
   });
 }
 
@@ -63,7 +85,7 @@ export async function handleGetToday(req: Request): Promise<Response> {
  */
 export async function handleStartQuiz(req: Request): Promise<Response> {
   // Parse request body
-  let body: { guestToken?: string; userId?: string };
+  let body: { guestToken?: string };
   try {
     body = await req.json();
   } catch {
@@ -73,12 +95,11 @@ export async function handleStartQuiz(req: Request): Promise<Response> {
     );
   }
 
-  const { guestToken, userId } = body;
+  const { guestToken } = body;
   const sessionUserId = getUserIdFromRequest(req);
   const resolvedUserId = sessionUserId ?? null;
   const resolvedGuestToken = resolvedUserId ? null : guestToken?.trim();
 
-  // For now, we only support guest sessions (userId auth comes later)
   if (!resolvedUserId && !resolvedGuestToken) {
     return Response.json(
       { error: "guestToken is required for guest sessions" },
@@ -110,22 +131,30 @@ export async function handleStartQuiz(req: Request): Promise<Response> {
     }
   }
 
-  if (resolvedUserId && hasUserCompleted(resolvedUserId, dateKey)) {
-    console.log(
-      `[quiz] alreadyCompleted start blocked dateKey=${dateKey} userId=${resolvedUserId}`
-    );
-    return Response.json({
-      alreadyCompleted: true,
-      quizDate: dateKey,
-      message: "You already completed today's quiz.",
-    });
+  if (resolvedUserId) {
+    const progress = await getProgressByUserId(resolvedUserId);
+    if (progress?.lastCompletion?.date === dateKey) {
+      console.log(
+        `[quiz] alreadyCompleted start blocked dateKey=${dateKey} userId=${resolvedUserId}`
+      );
+      return Response.json({
+        alreadyCompleted: true,
+        quizDate: dateKey,
+        message: "You already completed today's quiz.",
+      });
+    }
   }
 
   // Track that this guest/user has started the quiz
   if (resolvedGuestToken) {
     markQuizStarted(resolvedGuestToken, dateKey, question.id);
   }
-  // TODO: Handle userId sessions when auth is implemented
+  if (resolvedUserId) {
+    const attemptKey = getAttemptKey(resolvedUserId, dateKey);
+    if (!userAttemptCounts.has(attemptKey)) {
+      userAttemptCounts.set(attemptKey, 0);
+    }
+  }
 
   // Return question without correct answers
   const safeQuestion = stripCorrectAnswers(question);
@@ -164,7 +193,6 @@ export async function handleSubmitQuiz(req: Request): Promise<Response> {
   // Parse request body
   let body: {
     guestToken?: string;
-    userId?: string;
     questionId: string;
     answer: unknown;
     elapsedMs: number;
@@ -175,7 +203,7 @@ export async function handleSubmitQuiz(req: Request): Promise<Response> {
     return Response.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { guestToken, userId, questionId, answer, elapsedMs } = body;
+  const { guestToken, questionId, answer, elapsedMs } = body;
   const sessionUserId = getUserIdFromRequest(req);
   const resolvedUserId = sessionUserId ?? null;
   const resolvedGuestToken = resolvedUserId ? null : guestToken?.trim();
@@ -240,20 +268,25 @@ export async function handleSubmitQuiz(req: Request): Promise<Response> {
     });
   }
 
-  if (resolvedUserId && hasUserCompleted(resolvedUserId, dateKey)) {
-    console.log(
-      `[quiz] alreadyCompleted submit blocked dateKey=${dateKey} userId=${resolvedUserId}`
-    );
-    return Response.json({
-      alreadyCompleted: true,
-      quizDate: dateKey,
-      canRetry: false,
-      message: "You already completed today's quiz.",
-    });
+  if (resolvedUserId) {
+    const progress = await getProgressByUserId(resolvedUserId);
+    if (progress?.lastCompletion?.date === dateKey) {
+      console.log(
+        `[quiz] alreadyCompleted submit blocked dateKey=${dateKey} userId=${resolvedUserId}`
+      );
+      return Response.json({
+        alreadyCompleted: true,
+        quizDate: dateKey,
+        canRetry: false,
+        message: "You already completed today's quiz.",
+      });
+    }
   }
 
   // Increment attempt count
-  const attemptNumber = (attemptData?.attemptCount ?? 0) + 1;
+  const attemptNumber = resolvedUserId
+    ? (userAttemptCounts.get(getAttemptKey(resolvedUserId, dateKey)) ?? 0) + 1
+    : (attemptData?.attemptCount ?? 0) + 1;
 
   // Check the answer
   const checkResult = checkAnswer(todayQuestion, answer);
@@ -268,6 +301,9 @@ export async function handleSubmitQuiz(req: Request): Promise<Response> {
         solvedOnAttempt: null,
         elapsedMs: null,
       });
+    }
+    if (resolvedUserId) {
+      userAttemptCounts.set(getAttemptKey(resolvedUserId, dateKey), attemptNumber);
     }
 
     // Build feedback based on question type
@@ -306,7 +342,30 @@ export async function handleSubmitQuiz(req: Request): Promise<Response> {
     });
   }
   if (resolvedUserId) {
-    markUserCompleted(resolvedUserId, dateKey);
+    const progress = await getOrCreateProgress(resolvedUserId);
+    const previousDateKey = getPreviousDateKey(dateKey);
+    const currentStreak =
+      progress.lastCorrectDate === previousDateKey
+        ? progress.currentStreak + 1
+        : 1;
+    const longestStreak = Math.max(progress.longestStreak, currentStreak);
+    const updated = {
+      ...progress,
+      currentStreak,
+      longestStreak,
+      totalPoints: progress.totalPoints + pointsBreakdown.totalPoints,
+      lastCorrectDate: dateKey,
+      lastCompletion: {
+        date: dateKey,
+        questionId: todayQuestion.id,
+        attemptsUsed: attemptNumber,
+        pointsEarned: pointsBreakdown.totalPoints,
+        completedAt: new Date().toISOString(),
+        elapsedMs,
+      },
+    };
+    await saveProgress(updated);
+    userAttemptCounts.delete(getAttemptKey(resolvedUserId, dateKey));
   }
 
   // Include correct answer info only on correct response
