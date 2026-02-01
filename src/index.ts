@@ -2,6 +2,7 @@ import { serve } from "bun";
 import index from "./index.html";
 import { handleQuizApi } from "./server/api/quiz";
 import { handleAuthApi } from "./server/api/auth";
+import { handleLeaderboardApi } from "./server/api/leaderboard";
 
 async function apiHandler(req: Request): Promise<Response> {
   const url = new URL(req.url);
@@ -14,6 +15,10 @@ async function apiHandler(req: Request): Promise<Response> {
   // Route /api/auth/* to auth API handler
   if (url.pathname.startsWith("/api/auth")) {
     return handleAuthApi(req);
+  }
+
+  if (url.pathname.startsWith("/api/leaderboard")) {
+    return handleLeaderboardApi(req);
   }
 
   // Default 404 for unknown API routes

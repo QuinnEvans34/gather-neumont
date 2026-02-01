@@ -8,6 +8,14 @@ type AuthUser = {
   isAdmin: boolean;
 };
 
+type LeaderboardEntry = {
+  rank: number;
+  username: string;
+  longestStreak: number;
+  currentStreak: number;
+  totalPoints: number;
+};
+
 const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/;
 
 export default function QuizDevPage() {
@@ -18,6 +26,9 @@ export default function QuizDevPage() {
   const [authError, setAuthError] = useState<string | null>(null);
   const [authLoading, setAuthLoading] = useState(false);
   const [guestWarning, setGuestWarning] = useState(false);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+  const [leaderboardError, setLeaderboardError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -120,6 +131,24 @@ export default function QuizDevPage() {
   const handleGuestChange = () => {
     setGuestWarning(false);
     setAuthError(null);
+  };
+
+  const loadLeaderboard = async () => {
+    setLeaderboardLoading(true);
+    setLeaderboardError(null);
+    try {
+      const res = await fetch("/api/leaderboard?limit=50");
+      const data = (await res.json()) as { entries?: LeaderboardEntry[] };
+      if (!res.ok) {
+        setLeaderboardError("Failed to load leaderboard");
+        return;
+      }
+      setLeaderboard(data.entries ?? []);
+    } catch {
+      setLeaderboardError("Failed to load leaderboard");
+    } finally {
+      setLeaderboardLoading(false);
+    }
   };
 
   return (
@@ -228,6 +257,52 @@ export default function QuizDevPage() {
           >
             Open Daily Quiz
           </button>
+          <section className="quiz-dev-leaderboard">
+            <div className="quiz-dev-leaderboard-header">
+              <h3>Leaderboard</h3>
+              <button
+                type="button"
+                className="quiz-dev-auth-btn"
+                onClick={loadLeaderboard}
+                disabled={leaderboardLoading}
+              >
+                {leaderboardLoading ? "Refreshing..." : "Refresh"}
+              </button>
+            </div>
+            {leaderboardError && (
+              <p className="quiz-dev-auth-error" role="status">
+                {leaderboardError}
+              </p>
+            )}
+            {leaderboard.length === 0 ? (
+              <p className="quiz-dev-leaderboard-empty">
+                No leaderboard entries yet.
+              </p>
+            ) : (
+              <div className="quiz-dev-leaderboard-table" role="table">
+                <div className="quiz-dev-leaderboard-row quiz-dev-leaderboard-head" role="row">
+                  <span>#</span>
+                  <span>User</span>
+                  <span>Longest</span>
+                  <span>Current</span>
+                  <span>Points</span>
+                </div>
+                {leaderboard.map((entry) => (
+                  <div
+                    className="quiz-dev-leaderboard-row"
+                    key={`${entry.rank}-${entry.username}`}
+                    role="row"
+                  >
+                    <span>{entry.rank}</span>
+                    <span>{entry.username}</span>
+                    <span>{entry.longestStreak}</span>
+                    <span>{entry.currentStreak}</span>
+                    <span>{entry.totalPoints}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
         </div>
       </main>
 

@@ -42,6 +42,11 @@ export async function getUserById(id: string): Promise<UserRecord | undefined> {
   return data.users.find((user) => user.id === id);
 }
 
+export async function getAllUsers(): Promise<UserRecord[]> {
+  const data = await ensureUsersFile();
+  return data.users ?? [];
+}
+
 export async function createUser(username: string): Promise<UserRecord | null> {
   const data = await ensureUsersFile();
   const target = username.toLowerCase();
