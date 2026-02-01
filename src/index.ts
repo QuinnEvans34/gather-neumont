@@ -1,9 +1,18 @@
 import { serve } from "bun";
 import index from "./index.html";
+import { handleQuizApi } from "./server/api/quiz";
 
-function apiHandler(req: Request): Response {
+async function apiHandler(req: Request): Promise<Response> {
+  const url = new URL(req.url);
+
+  // Route /api/quiz/* to quiz API handler
+  if (url.pathname.startsWith("/api/quiz")) {
+    return handleQuizApi(req);
+  }
+
+  // Default 404 for unknown API routes
   return Response.json(
-    { error: "Not found", path: new URL(req.url).pathname },
+    { error: "Not found", path: url.pathname },
     { status: 404 }
   );
 }
