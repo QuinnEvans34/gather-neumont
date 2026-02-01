@@ -61,6 +61,11 @@ export async function getProgressByUserId(
   return data.progress.find((record) => record.userId === userId);
 }
 
+export async function getAllProgress(): Promise<ProgressRecord[]> {
+  const data = await ensureProgressFile();
+  return data.progress ?? [];
+}
+
 export async function getOrCreateProgress(
   userId: string
 ): Promise<ProgressRecord> {
