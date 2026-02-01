@@ -2,7 +2,7 @@
  * useQuiz hook - manages guest quiz flow state and API calls.
  */
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 
 // Generate a random guest token for this session
 function generateGuestToken(): string {
@@ -42,8 +42,8 @@ export interface PointsBreakdown {
 }
 
 export interface SubmitResult {
-  correct?: boolean;
-  attemptNumber?: number;
+  correct: boolean;
+  attemptNumber: number;
   feedback?: {
     wrongIndex?: number;
     selectedIndices?: number[];
@@ -58,9 +58,6 @@ export interface SubmitResult {
   rollover?: boolean;
   newQuestion?: Question;
   alreadySolved?: boolean;
-  alreadyCompleted?: boolean;
-  canRetry?: boolean;
-  message?: string;
   error?: string;
 }
 
@@ -71,7 +68,6 @@ export type QuizState =
   | "submitting"
   | "incorrect"
   | "correct"
-  | "completed"
   | "error";
 
 export interface UseQuizReturn {
@@ -94,100 +90,37 @@ export function useQuiz(): UseQuizReturn {
   const [attemptNumber, setAttemptNumber] = useState(0);
   const [lastResult, setLastResult] = useState<SubmitResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+
   // Timer ref for tracking elapsed time
   const startTimeRef = useRef<number | null>(null);
-  const intervalRef = useRef<number | null>(null);
   const [elapsedMs, setElapsedMs] = useState(0);
-
-  console.log(`[useQuiz] 🎯 Hook state:`, {
-    state,
-    hasQuestion: !!question,
-    quizDate,
-    attemptNumber,
-    hasLastResult: !!lastResult,
-    error,
-    elapsedMs
-  });
-
-  useEffect(() => {
-    console.log(`[useQuiz] 🏁 Hook initialized - setting up cleanup`);
-    return () => {
-      console.log(`[useQuiz] 🧹 Hook cleanup - clearing timer interval`);
-      if (intervalRef.current) {
-        window.clearInterval(intervalRef.current);
-        intervalRef.current = null;
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    const ticking =
-      state === "active" || state === "incorrect" || state === "submitting";
-    if (!ticking && intervalRef.current) {
-      window.clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-  }, [state]);
 
   const guestToken = getGuestToken();
 
   const startQuiz = useCallback(async () => {
-    console.log(`[useQuiz] 🚀 Starting quiz...`);
     setState("loading");
     setError(null);
 
     try {
-      console.log(`[useQuiz] 📡 Fetching quiz from /api/quiz/start`);
       const response = await fetch("/api/quiz/start", {
         method: "POST",
-        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ guestToken }),
       });
 
       const data = await response.json();
-      console.log(`[useQuiz] 📦 Received response:`, data);
 
       if (!response.ok) {
-        console.error(`[useQuiz] ❌ API error:`, data.error);
         throw new Error(data.error || "Failed to start quiz");
       }
-
-      if (data.alreadyCompleted) {
-        console.log(`[useQuiz] ✅ Quiz already completed for today`);
-        setQuestion(null);
-        setQuizDate(data.quizDate);
-        setAttemptNumber(0);
-        setLastResult(data);
-        setState("completed");
-        return;
-      }
-
-      console.log(`[useQuiz] 📝 Quiz started - Question loaded:`, {
-        type: data.question.type,
-        difficulty: data.question.difficulty,
-        basePoints: data.question.basePoints,
-        quizDate: data.quizDate
-      });
 
       setQuestion(data.question);
       setQuizDate(data.quizDate);
       setAttemptNumber(0);
       setLastResult(null);
       startTimeRef.current = Date.now();
-      if (intervalRef.current) {
-        window.clearInterval(intervalRef.current);
-      }
-      intervalRef.current = window.setInterval(() => {
-        if (startTimeRef.current) {
-          setElapsedMs(Date.now() - startTimeRef.current);
-        }
-      }, 250);
-      console.log(`[useQuiz] ⏱️ Timer started - tracking elapsed time`);
       setState("active");
-      console.log(`[useQuiz] ✅ Quiz state set to 'active'`);
     } catch (err) {
-      console.error(`[useQuiz] ❌ Error starting quiz:`, err);
       setError(err instanceof Error ? err.message : "Unknown error");
       setState("error");
     }
@@ -195,17 +128,8 @@ export function useQuiz(): UseQuizReturn {
 
   const submitAnswer = useCallback(
     async (answer: unknown): Promise<SubmitResult | null> => {
-      if (!question) {
-        console.warn(`[useQuiz] ⚠️ Cannot submit - no question loaded`);
-        return null;
-      }
+      if (!question) return null;
 
-      console.log(`[useQuiz] 📤 Submitting answer:`, {
-        questionId: question.id,
-        questionType: question.type,
-        answer,
-        attemptNumber: attemptNumber + 1
-      });
       setState("submitting");
 
       // Calculate elapsed time
@@ -213,13 +137,10 @@ export function useQuiz(): UseQuizReturn {
         ? Date.now() - startTimeRef.current
         : 0;
       setElapsedMs(elapsed);
-      console.log(`[useQuiz] ⏱️ Elapsed time: ${(elapsed / 1000).toFixed(2)}s`);
 
       try {
-        console.log(`[useQuiz] 📡 Posting to /api/quiz/submit`);
         const response = await fetch("/api/quiz/submit", {
           method: "POST",
-          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             guestToken,
@@ -230,45 +151,24 @@ export function useQuiz(): UseQuizReturn {
         });
 
         const data: SubmitResult = await response.json();
-        console.log(`[useQuiz] 📦 Submit response:`, data);
 
         setLastResult(data);
-        if (typeof data.attemptNumber === "number") {
-          console.log(`[useQuiz] 🔢 Attempt number: ${data.attemptNumber}`);
-          setAttemptNumber(data.attemptNumber);
-        }
+        setAttemptNumber(data.attemptNumber);
 
-        if (data.alreadyCompleted) {
-          console.log(`[useQuiz] ✅ Quiz completed!`);
-          setQuestion(null);
-          setState("completed");
-          if (intervalRef.current) {
-            window.clearInterval(intervalRef.current);
-            intervalRef.current = null;
-          }
-        } else if (data.rollover && data.newQuestion) {
-          console.log(`[useQuiz] 🔄 Day rollover detected - loading new question`);
+        if (data.rollover && data.newQuestion) {
           // Day rolled over, update to new question
           setQuestion(data.newQuestion);
           setQuizDate(data.quizDate);
           startTimeRef.current = Date.now();
-          setElapsedMs(0);
           setState("active");
         } else if (data.correct) {
-          console.log(`[useQuiz] ✅ Answer CORRECT! Points: ${data.pointsEarned}`);
           setState("correct");
-          if (intervalRef.current) {
-            window.clearInterval(intervalRef.current);
-            intervalRef.current = null;
-          }
         } else {
-          console.log(`[useQuiz] ❌ Answer INCORRECT - try again`);
           setState("incorrect");
         }
 
         return data;
       } catch (err) {
-        console.error(`[useQuiz] ❌ Error submitting answer:`, err);
         setError(err instanceof Error ? err.message : "Unknown error");
         setState("error");
         return null;
@@ -285,10 +185,6 @@ export function useQuiz(): UseQuizReturn {
     setLastResult(null);
     setError(null);
     startTimeRef.current = null;
-    if (intervalRef.current) {
-      window.clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
     setElapsedMs(0);
   }, []);
 

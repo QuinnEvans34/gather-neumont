@@ -9,16 +9,12 @@ interface WrittenResponseProps {
   onSubmit: (answer: unknown) => void;
   disabled?: boolean;
   showIncorrect?: boolean;
-  showCorrect?: boolean;
-  acceptedAnswers?: string[];
 }
 
 export function WrittenResponse({
   onSubmit,
   disabled = false,
   showIncorrect = false,
-  showCorrect = false,
-  acceptedAnswers = [],
 }: WrittenResponseProps) {
   const [text, setText] = useState("");
   const [shake, setShake] = useState(false);
@@ -72,18 +68,6 @@ export function WrittenResponse({
       >
         Submit Answer
       </button>
-      {showCorrect && acceptedAnswers.length > 0 && (
-        <div className="written-response-answers">
-          <span className="written-response-label">Accepted Answers</span>
-          <div className="written-response-list">
-            {acceptedAnswers.map((answer) => (
-              <span className="written-response-pill" key={answer}>
-                {answer}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
