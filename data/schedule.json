@@ -1,4 +1,10 @@
 {
   "version": 1,
-  "schedule": []
+  "schedule": [
+    {
+      "dateKey": "2026-02-01",
+      "questionId": "q001",
+      "assignedAt": "2026-02-01T20:36:52.304Z"
+    }
+  ]
 }

@@ -14,6 +14,9 @@ interface QuizCardsProps {
   wrongIndex?: number; // For MCQ: which index was wrong
   wrongIndices?: number[]; // For select-all: which were selected (wrong)
   showIncorrect?: boolean;
+  correctIndex?: number;
+  correctIndices?: number[];
+  showCorrect?: boolean;
 }
 
 export function QuizCards({
@@ -24,6 +27,9 @@ export function QuizCards({
   wrongIndex,
   wrongIndices,
   showIncorrect = false,
+  correctIndex,
+  correctIndices,
+  showCorrect = false,
 }: QuizCardsProps) {
   // MCQ: single selection (number | null)
   // Select-all: multiple selection (Set<number>)
@@ -91,6 +97,11 @@ export function QuizCards({
             (type === "mcq"
               ? wrongIndex === index
               : wrongIndices?.includes(index));
+          const isCorrect =
+            showCorrect &&
+            (type === "mcq"
+              ? correctIndex === index
+              : correctIndices?.includes(index));
           const isShaking = shakeIndex === index;
 
           return (
@@ -98,7 +109,7 @@ export function QuizCards({
               key={index}
               className={`quiz-card ${isSelected ? "selected" : ""} ${
                 isWrong ? "wrong" : ""
-              } ${isShaking ? "shake" : ""}`}
+              } ${isCorrect ? "correct" : ""} ${isShaking ? "shake" : ""}`}
               onClick={() => handleCardClick(index)}
               disabled={disabled}
             >
@@ -106,6 +117,7 @@ export function QuizCards({
                 {String.fromCharCode(65 + index)}
               </span>
               <span className="quiz-card-text">{choice}</span>
+              {isCorrect && <span className="quiz-card-correct">Correct</span>}
               {type === "select-all" && (
                 <span className="quiz-card-checkbox">
                   {isSelected ? "✓" : ""}

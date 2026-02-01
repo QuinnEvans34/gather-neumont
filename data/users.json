@@ -1,4 +1,11 @@
 {
   "version": 1,
-  "users": []
+  "users": [
+    {
+      "id": "47330dc4-df72-4cc4-9869-66acdf1c13da",
+      "username": "admin",
+      "isAdmin": true,
+      "createdAt": "2026-02-01T20:35:59.153Z"
+    }
+  ]
 }
