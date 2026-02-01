@@ -6,10 +6,12 @@ import {
   getQuestionById,
   updateQuestion,
 } from "../data/questions.store";
+import { addScheduleEntry, getScheduleEntries } from "../data/schedule.store";
 import { getUserIdFromRequest } from "./auth";
 import { checkAnswer } from "../services/answer-checker.service";
 import { calculatePoints } from "../services/scoring.service";
 import type { Question } from "../../types/quiz.types";
+import { getMountainDateKey } from "../utils/timezone";
 
 async function requireAdmin(req: Request): Promise<Response | null> {
   const userId = getUserIdFromRequest(req);
@@ -42,6 +44,81 @@ function getCorrectAnswerInfo(question: Question): Record<string, unknown> {
     default:
       return {};
   }
+}
+
+function isValidDateKey(dateKey: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey)) return false;
+  const [year, month, day] = dateKey.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return (
+    date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+  );
+}
+
+async function handleSchedule(req: Request): Promise<Response> {
+  if (req.method === "GET") {
+    const schedule = await getScheduleEntries();
+    return Response.json({
+      schedule: schedule.map((entry) => ({
+        date: entry.dateKey,
+        questionId: entry.questionId,
+      })),
+    });
+  }
+
+  if (req.method === "POST") {
+    let body: { date?: string; questionId?: string };
+    try {
+      body = await req.json();
+    } catch {
+      logValidationFailure("POST /api/admin/schedule", "invalid json");
+      return Response.json({ error: "Invalid JSON body" }, { status: 400 });
+    }
+
+    const date = body.date?.trim() ?? "";
+    const questionId = body.questionId?.trim() ?? "";
+    if (!isValidDateKey(date)) {
+      logValidationFailure("POST /api/admin/schedule", "invalid date", date);
+      return Response.json({ error: "invalid_date" }, { status: 400 });
+    }
+    const todayKey = getMountainDateKey();
+    if (date < todayKey) {
+      logValidationFailure("POST /api/admin/schedule", "past date", date);
+      return Response.json({ error: "date_in_past" }, { status: 400 });
+    }
+    if (!/^q\d{3}$/.test(questionId)) {
+      logValidationFailure("POST /api/admin/schedule", "invalid questionId", questionId);
+      return Response.json({ error: "invalid_question" }, { status: 400 });
+    }
+
+    const question = await getQuestionById(questionId);
+    if (!question) {
+      logValidationFailure("POST /api/admin/schedule", "question not found", questionId);
+      return Response.json({ error: "not_found" }, { status: 404 });
+    }
+
+    const existing = (await getScheduleEntries()).find(
+      (entry) => entry.dateKey === date
+    );
+    if (existing) {
+      return Response.json({ error: "already_scheduled" }, { status: 409 });
+    }
+
+    const entry = await addScheduleEntry({
+      dateKey: date,
+      questionId,
+      assignedAt: new Date().toISOString(),
+    });
+    if (!entry) {
+      return Response.json({ error: "failed_to_save" }, { status: 500 });
+    }
+
+    return Response.json({ success: true });
+  }
+
+  return Response.json({ error: "Not found" }, { status: 404 });
 }
 
 async function handleQuestions(req: Request): Promise<Response> {
@@ -168,6 +245,10 @@ export async function handleAdminApi(req: Request): Promise<Response> {
       return Response.json({ error: "Method not allowed" }, { status: 405 });
     }
     return handleTestSubmit(req);
+  }
+
+  if (path === "/api/admin/schedule") {
+    return handleSchedule(req);
   }
 
   return Response.json({ error: "Not found" }, { status: 404 });

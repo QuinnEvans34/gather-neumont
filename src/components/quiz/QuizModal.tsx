@@ -16,7 +16,7 @@ interface QuizModalProps {
   isAdmin?: boolean;
 }
 
-type Tab = "quiz" | "admin" | "questions";
+type Tab = "quiz" | "admin" | "questions" | "schedule";
 
 type AdminTestResult = {
   correct: boolean;
@@ -52,6 +52,11 @@ type EditorState = {
   correctIndex: number;
   correctIndices: number[];
   acceptedAnswersText: string;
+};
+
+type ScheduleEntry = {
+  date: string;
+  questionId: string;
 };
 
 const TAG_OPTIONS = [
@@ -97,6 +102,8 @@ const BASE_POINTS: Record<number, number> = {
 
 const EMPTY_MCQ_CHOICES = ["", "", "", ""];
 const EMPTY_SELECT_CHOICES = ["", "", "", "", ""];
+const RANGE_OPTIONS = ["week", "month", "year"] as const;
+type RangeOption = typeof RANGE_OPTIONS[number];
 
 export function QuizModal({ isOpen, onClose, isAdmin = false }: QuizModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>("quiz");
@@ -119,6 +126,15 @@ export function QuizModal({ isOpen, onClose, isAdmin = false }: QuizModalProps) 
   const [editorError, setEditorError] = useState<string | null>(null);
   const [editorSaving, setEditorSaving] = useState(false);
   const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
+  const [scheduleEntries, setScheduleEntries] = useState<ScheduleEntry[]>([]);
+  const [scheduleRange, setScheduleRange] = useState<RangeOption>("week");
+  const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [scheduleError, setScheduleError] = useState<string | null>(null);
+  const [assignDate, setAssignDate] = useState<string | null>(null);
+  const [assignQuestionId, setAssignQuestionId] = useState("");
+  const [scheduleErrorsByDate, setScheduleErrorsByDate] = useState<
+    Record<string, string>
+  >({});
   const quiz = useQuiz();
 
   useEffect(() => {
@@ -147,10 +163,28 @@ export function QuizModal({ isOpen, onClose, isAdmin = false }: QuizModalProps) 
     }
   }, [selectedQuestionId]);
 
+  const refreshSchedule = useCallback(async () => {
+    setScheduleLoading(true);
+    setScheduleError(null);
+    try {
+      const res = await fetch("/api/admin/schedule");
+      const data = (await res.json()) as { schedule?: ScheduleEntry[] };
+      if (!res.ok) {
+        throw new Error("Failed to load schedule");
+      }
+      setScheduleEntries(data.schedule ?? []);
+    } catch {
+      setScheduleError("Failed to load schedule");
+    } finally {
+      setScheduleLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (!isOpen || !isAdmin) return;
     const load = async () => {
       await refreshAdminQuestions();
+      await refreshSchedule();
     };
     load();
     return () => {};
@@ -301,6 +335,103 @@ export function QuizModal({ isOpen, onClose, isAdmin = false }: QuizModalProps) 
   const getTruncatedPrompt = (prompt: string) => {
     if (prompt.length <= 80) return prompt;
     return `${prompt.slice(0, 77)}...`;
+  };
+
+  const getPromptPreview = (prompt: string, max = 60) => {
+    if (prompt.length <= max) return prompt;
+    return `${prompt.slice(0, max - 3)}...`;
+  };
+
+  const getRangeDays = (range: RangeOption) => {
+    if (range === "month") return 30;
+    if (range === "year") return 365;
+    return 7;
+  };
+
+  const getDateList = (range: RangeOption) => {
+    const days = getRangeDays(range);
+    const today = new Date();
+    const list: string[] = [];
+    for (let i = 0; i < days; i += 1) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      const key = date.toISOString().slice(0, 10);
+      list.push(key);
+    }
+    return list;
+  };
+
+  const getDayOfWeek = (dateKey: string) => {
+    const date = new Date(`${dateKey}T00:00:00`);
+    return date.toLocaleDateString(undefined, { weekday: "short" });
+  };
+
+  const scheduleMap = useMemo(() => {
+    const map = new Map<string, ScheduleEntry>();
+    scheduleEntries.forEach((entry) => map.set(entry.date, entry));
+    return map;
+  }, [scheduleEntries]);
+
+  const scheduledQuestionIds = useMemo(() => {
+    const unique = new Set(scheduleEntries.map((entry) => entry.questionId));
+    return unique;
+  }, [scheduleEntries]);
+
+  const remainingQuestions = useMemo(() => {
+    const total = adminQuestions.length;
+    return total - scheduledQuestionIds.size;
+  }, [adminQuestions.length, scheduledQuestionIds.size]);
+
+  const dateList = useMemo(() => getDateList(scheduleRange), [scheduleRange]);
+  const missingCount = dateList.filter((date) => !scheduleMap.has(date)).length;
+
+  const openAssign = (date: string) => {
+    setAssignDate(date);
+    setAssignQuestionId(adminQuestions[0]?.id ?? "");
+    setScheduleErrorsByDate((prev) => ({ ...prev, [date]: "" }));
+  };
+
+  const closeAssign = () => {
+    setAssignDate(null);
+    setAssignQuestionId("");
+  };
+
+  const handleAssignSave = async (date: string) => {
+    if (!assignQuestionId) {
+      setScheduleErrorsByDate((prev) => ({
+        ...prev,
+        [date]: "Select a question.",
+      }));
+      return;
+    }
+    try {
+      const res = await fetch("/api/admin/schedule", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ date, questionId: assignQuestionId }),
+      });
+      if (res.status === 409) {
+        setScheduleErrorsByDate((prev) => ({
+          ...prev,
+          [date]: "Already scheduled.",
+        }));
+        return;
+      }
+      if (!res.ok) {
+        setScheduleErrorsByDate((prev) => ({
+          ...prev,
+          [date]: "Failed to assign.",
+        }));
+        return;
+      }
+      await refreshSchedule();
+      closeAssign();
+    } catch {
+      setScheduleErrorsByDate((prev) => ({
+        ...prev,
+        [date]: "Failed to assign.",
+      }));
+    }
   };
 
   const openCreateEditor = () => {
@@ -813,6 +944,14 @@ export function QuizModal({ isOpen, onClose, isAdmin = false }: QuizModalProps) 
                 >
                   Questions
                 </button>
+                <button
+                  className={`quiz-modal-tab ${
+                    activeTab === "schedule" ? "active" : ""
+                  }`}
+                  onClick={() => setActiveTab("schedule")}
+                >
+                  Schedule
+                </button>
               </>
             )}
           </div>
@@ -1099,6 +1238,108 @@ export function QuizModal({ isOpen, onClose, isAdmin = false }: QuizModalProps) 
                   </div>
                 </div>
               )}
+            </div>
+          )}
+          {activeTab === "schedule" && isAdmin && (
+            <div className="quiz-admin-panel">
+              <div className="quiz-admin-header">
+                <h3>Schedule</h3>
+                <select
+                  value={scheduleRange}
+                  onChange={(event) =>
+                    setScheduleRange(event.target.value as RangeOption)
+                  }
+                >
+                  <option value="week">Week</option>
+                  <option value="month">Month</option>
+                  <option value="year">Year</option>
+                </select>
+              </div>
+              <div className="quiz-admin-banner">
+                ⚠ {missingCount} of the next {dateList.length} days have no
+                question scheduled.
+              </div>
+              {remainingQuestions < 10 && (
+                <div className="quiz-admin-banner warning">
+                  ⚠ Only {remainingQuestions} unscheduled questions left.
+                </div>
+              )}
+              {scheduleLoading && <p className="quiz-admin-status">Loading...</p>}
+              {scheduleError && <p className="quiz-feedback error">{scheduleError}</p>}
+              <div className="quiz-admin-table">
+                <div className="quiz-admin-table-row quiz-admin-table-head">
+                  <span>Date</span>
+                  <span>Day</span>
+                  <span>Question</span>
+                  <span>Preview</span>
+                  <span>Status</span>
+                </div>
+                {dateList.map((date) => {
+                  const entry = scheduleMap.get(date);
+                  const question = entry
+                    ? adminQuestions.find((q) => q.id === entry.questionId)
+                    : null;
+                  return (
+                    <div className="quiz-admin-table-row" key={date}>
+                      <span>{date}</span>
+                      <span>{getDayOfWeek(date)}</span>
+                      <span>{entry?.questionId ?? "-"}</span>
+                      <span>
+                        {question
+                          ? getPromptPreview(question.prompt)
+                          : "No question selected"}
+                      </span>
+                      <span className="quiz-admin-status-cell">
+                        {entry ? "Scheduled" : "Empty"}
+                        {!entry && (
+                          <button
+                            type="button"
+                            className="quiz-admin-icon-btn"
+                            onClick={() => openAssign(date)}
+                          >
+                            Assign
+                          </button>
+                        )}
+                      </span>
+                      {assignDate === date && (
+                        <div className="quiz-admin-assign">
+                          <select
+                            value={assignQuestionId}
+                            onChange={(event) => setAssignQuestionId(event.target.value)}
+                          >
+                            {orderedQuestions.map((question) => (
+                              <option key={question.id} value={question.id}>
+                                {question.id} — {getPromptPreview(question.prompt)}
+                              </option>
+                            ))}
+                          </select>
+                          <div className="quiz-admin-row">
+                            <button
+                              type="button"
+                              className="quiz-submit-btn quiz-admin-btn"
+                              onClick={() => handleAssignSave(date)}
+                            >
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              className="quiz-submit-btn quiz-admin-btn"
+                              onClick={closeAssign}
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                          {scheduleErrorsByDate[date] && (
+                            <p className="quiz-feedback error">
+                              {scheduleErrorsByDate[date]}
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>

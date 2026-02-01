@@ -360,6 +360,47 @@
   color: #fff;
 }
 
+.quiz-admin-status-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #b0b0b0;
+}
+
+.quiz-admin-banner {
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(233, 69, 96, 0.3);
+  background: rgba(233, 69, 96, 0.08);
+  color: #f5c9d2;
+  font-size: 13px;
+}
+
+.quiz-admin-banner.warning {
+  border-color: rgba(255, 193, 7, 0.35);
+  background: rgba(255, 193, 7, 0.12);
+  color: #ffe2a1;
+}
+
+.quiz-admin-assign {
+  grid-column: 1 / -1;
+  margin-top: 8px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(0, 0, 0, 0.25);
+  display: grid;
+  gap: 8px;
+}
+
+.quiz-admin-assign select {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #1c1c1c;
+  color: #e0e0e0;
+}
+
 .quiz-admin-modal {
   position: fixed;
   inset: 0;
