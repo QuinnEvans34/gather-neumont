@@ -14,6 +14,7 @@ interface QuizResultProps {
   correctIndices?: number[];
   acceptedAnswers?: string[];
   attemptNumber: number;
+  onViewLeaderboard?: () => void;
 }
 
 export function QuizResult({
@@ -25,6 +26,7 @@ export function QuizResult({
   correctIndices,
   acceptedAnswers,
   attemptNumber,
+  onViewLeaderboard,
 }: QuizResultProps) {
   // Format the correct answer display
   const getCorrectAnswerDisplay = (): string => {
@@ -99,6 +101,18 @@ export function QuizResult({
         <div className="quiz-result-explanation">
           <h3>Explanation</h3>
           <p>{explanation}</p>
+        </div>
+      )}
+
+      {onViewLeaderboard && (
+        <div className="quiz-result-actions">
+          <button
+            type="button"
+            className="quiz-submit-btn"
+            onClick={onViewLeaderboard}
+          >
+            View Leaderboard
+          </button>
         </div>
       )}
     </div>

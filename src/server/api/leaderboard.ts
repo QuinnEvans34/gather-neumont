@@ -36,7 +36,7 @@ export async function handleLeaderboardApi(
   const ranked = progress
     .map((record) => {
       const user = userById.get(record.userId);
-      if (!user) return null;
+      if (!user || user.isAdmin) return null;
       return {
         userId: record.userId,
         username: user.username,
