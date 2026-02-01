@@ -19,6 +19,19 @@ import {
 import { checkAnswer } from "../services/answer-checker.service";
 import { calculatePoints } from "../services/scoring.service";
 import type { Question } from "../../types/quiz.types";
+import { getUserIdFromRequest } from "./auth";
+
+const userCompletions = new Map<string, Set<string>>();
+
+function hasUserCompleted(userId: string, dateKey: string): boolean {
+  return userCompletions.get(userId)?.has(dateKey) ?? false;
+}
+
+function markUserCompleted(userId: string, dateKey: string): void {
+  const existing = userCompletions.get(userId) ?? new Set<string>();
+  existing.add(dateKey);
+  userCompletions.set(userId, existing);
+}
 
 /**
  * GET /api/quiz/today
@@ -61,11 +74,14 @@ export async function handleStartQuiz(req: Request): Promise<Response> {
   }
 
   const { guestToken, userId } = body;
+  const sessionUserId = getUserIdFromRequest(req);
+  const resolvedUserId = sessionUserId ?? null;
+  const resolvedGuestToken = resolvedUserId ? null : guestToken?.trim();
 
   // For now, we only support guest sessions (userId auth comes later)
-  if (!guestToken && !userId) {
+  if (!resolvedUserId && !resolvedGuestToken) {
     return Response.json(
-      { error: "Must provide guestToken or userId" },
+      { error: "guestToken is required for guest sessions" },
       { status: 400 }
     );
   }
@@ -80,9 +96,34 @@ export async function handleStartQuiz(req: Request): Promise<Response> {
     );
   }
 
+  if (resolvedGuestToken) {
+    const attemptData = getGuestAttempt(resolvedGuestToken, dateKey);
+    if (attemptData?.solved) {
+      console.log(
+        `[quiz] alreadyCompleted start blocked dateKey=${dateKey} guestToken=${resolvedGuestToken}`
+      );
+      return Response.json({
+        alreadyCompleted: true,
+        quizDate: dateKey,
+        message: "You already completed today's quiz.",
+      });
+    }
+  }
+
+  if (resolvedUserId && hasUserCompleted(resolvedUserId, dateKey)) {
+    console.log(
+      `[quiz] alreadyCompleted start blocked dateKey=${dateKey} userId=${resolvedUserId}`
+    );
+    return Response.json({
+      alreadyCompleted: true,
+      quizDate: dateKey,
+      message: "You already completed today's quiz.",
+    });
+  }
+
   // Track that this guest/user has started the quiz
-  if (guestToken) {
-    markQuizStarted(guestToken, dateKey, question.id);
+  if (resolvedGuestToken) {
+    markQuizStarted(resolvedGuestToken, dateKey, question.id);
   }
   // TODO: Handle userId sessions when auth is implemented
 
@@ -92,8 +133,8 @@ export async function handleStartQuiz(req: Request): Promise<Response> {
   return Response.json({
     quizDate: dateKey,
     question: safeQuestion,
-    alreadyStarted: guestToken
-      ? hasStartedQuiz(guestToken, dateKey)
+    alreadyStarted: resolvedGuestToken
+      ? hasStartedQuiz(resolvedGuestToken, dateKey)
       : false,
   });
 }
@@ -135,11 +176,14 @@ export async function handleSubmitQuiz(req: Request): Promise<Response> {
   }
 
   const { guestToken, userId, questionId, answer, elapsedMs } = body;
+  const sessionUserId = getUserIdFromRequest(req);
+  const resolvedUserId = sessionUserId ?? null;
+  const resolvedGuestToken = resolvedUserId ? null : guestToken?.trim();
 
   // Validate required fields
-  if (!guestToken && !userId) {
+  if (!resolvedUserId && !resolvedGuestToken) {
     return Response.json(
-      { error: "Must provide guestToken or userId" },
+      { error: "guestToken is required for guest sessions" },
       { status: 400 }
     );
   }
@@ -179,14 +223,32 @@ export async function handleSubmitQuiz(req: Request): Promise<Response> {
   }
 
   // Get current attempt state for this guest
-  let attemptData = guestToken ? getGuestAttempt(guestToken, dateKey) : null;
+  let attemptData = resolvedGuestToken
+    ? getGuestAttempt(resolvedGuestToken, dateKey)
+    : null;
 
   // Check if already solved
   if (attemptData?.solved) {
+    console.log(
+      `[quiz] alreadyCompleted submit blocked dateKey=${dateKey} guestToken=${resolvedGuestToken}`
+    );
     return Response.json({
-      error: "Already solved today's quiz",
-      alreadySolved: true,
+      alreadyCompleted: true,
       quizDate: dateKey,
+      canRetry: false,
+      message: "You already completed today's quiz.",
+    });
+  }
+
+  if (resolvedUserId && hasUserCompleted(resolvedUserId, dateKey)) {
+    console.log(
+      `[quiz] alreadyCompleted submit blocked dateKey=${dateKey} userId=${resolvedUserId}`
+    );
+    return Response.json({
+      alreadyCompleted: true,
+      quizDate: dateKey,
+      canRetry: false,
+      message: "You already completed today's quiz.",
     });
   }
 
@@ -198,8 +260,8 @@ export async function handleSubmitQuiz(req: Request): Promise<Response> {
 
   if (!checkResult.correct) {
     // Update attempt count in session
-    if (guestToken) {
-      updateGuestAttempt(guestToken, dateKey, {
+    if (resolvedGuestToken) {
+      updateGuestAttempt(resolvedGuestToken, dateKey, {
         questionId: todayQuestion.id,
         attemptCount: attemptNumber,
         solved: false,
@@ -234,14 +296,17 @@ export async function handleSubmitQuiz(req: Request): Promise<Response> {
   );
 
   // Update session with solved state
-  if (guestToken) {
-    updateGuestAttempt(guestToken, dateKey, {
+  if (resolvedGuestToken) {
+    updateGuestAttempt(resolvedGuestToken, dateKey, {
       questionId: todayQuestion.id,
       attemptCount: attemptNumber,
       solved: true,
       solvedOnAttempt: attemptNumber,
       elapsedMs,
     });
+  }
+  if (resolvedUserId) {
+    markUserCompleted(resolvedUserId, dateKey);
   }
 
   // Include correct answer info only on correct response

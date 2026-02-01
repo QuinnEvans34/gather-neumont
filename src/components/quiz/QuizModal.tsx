@@ -78,6 +78,16 @@ export function QuizModal({ isOpen, onClose }: QuizModalProps) {
       );
     }
 
+    if (quiz.state === "completed") {
+      return (
+        <div className="quiz-loading">
+          <p className="quiz-feedback">
+            {quiz.lastResult?.message ?? "You already completed today's quiz."}
+          </p>
+        </div>
+      );
+    }
+
     // Idle state - show start button
     if (quiz.state === "idle") {
       return (

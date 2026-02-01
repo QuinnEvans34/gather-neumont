@@ -42,8 +42,8 @@ export interface PointsBreakdown {
 }
 
 export interface SubmitResult {
-  correct: boolean;
-  attemptNumber: number;
+  correct?: boolean;
+  attemptNumber?: number;
   feedback?: {
     wrongIndex?: number;
     selectedIndices?: number[];
@@ -58,6 +58,9 @@ export interface SubmitResult {
   rollover?: boolean;
   newQuestion?: Question;
   alreadySolved?: boolean;
+  alreadyCompleted?: boolean;
+  canRetry?: boolean;
+  message?: string;
   error?: string;
 }
 
@@ -68,6 +71,7 @@ export type QuizState =
   | "submitting"
   | "incorrect"
   | "correct"
+  | "completed"
   | "error";
 
 export interface UseQuizReturn {
@@ -90,7 +94,6 @@ export function useQuiz(): UseQuizReturn {
   const [attemptNumber, setAttemptNumber] = useState(0);
   const [lastResult, setLastResult] = useState<SubmitResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-
   // Timer ref for tracking elapsed time
   const startTimeRef = useRef<number | null>(null);
   const [elapsedMs, setElapsedMs] = useState(0);
@@ -112,6 +115,15 @@ export function useQuiz(): UseQuizReturn {
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to start quiz");
+      }
+
+      if (data.alreadyCompleted) {
+        setQuestion(null);
+        setQuizDate(data.quizDate);
+        setAttemptNumber(0);
+        setLastResult(data);
+        setState("completed");
+        return;
       }
 
       setQuestion(data.question);
@@ -153,9 +165,14 @@ export function useQuiz(): UseQuizReturn {
         const data: SubmitResult = await response.json();
 
         setLastResult(data);
-        setAttemptNumber(data.attemptNumber);
+        if (typeof data.attemptNumber === "number") {
+          setAttemptNumber(data.attemptNumber);
+        }
 
-        if (data.rollover && data.newQuestion) {
+        if (data.alreadyCompleted) {
+          setQuestion(null);
+          setState("completed");
+        } else if (data.rollover && data.newQuestion) {
           // Day rolled over, update to new question
           setQuestion(data.newQuestion);
           setQuizDate(data.quizDate);

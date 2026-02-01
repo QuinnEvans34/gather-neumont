@@ -1,0 +1,152 @@
+import {
+  createUser,
+  ensureAdminFlag,
+  getUserById,
+  getUserByUsername,
+} from "../data/users.store";
+import {
+  buildSessionCookie,
+  clearSessionCookie,
+  parseCookies,
+} from "../utils/cookies";
+
+const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/;
+const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
+
+interface SessionRecord {
+  userId: string;
+  createdAt: Date;
+  lastSeenAt: Date;
+}
+
+const sessions = new Map<string, SessionRecord>();
+
+function jsonWithCookie(
+  data: unknown,
+  cookie?: string,
+  init?: ResponseInit
+): Response {
+  const headers = new Headers(init?.headers);
+  if (cookie) {
+    headers.set("Set-Cookie", cookie);
+  }
+  return Response.json(data, { ...init, headers });
+}
+
+function getSessionToken(req: Request): string | null {
+  const cookies = parseCookies(req.headers.get("cookie"));
+  return cookies.session ?? null;
+}
+
+function createSession(userId: string): string {
+  const token = crypto.randomUUID();
+  const now = new Date();
+  sessions.set(token, { userId, createdAt: now, lastSeenAt: now });
+  return token;
+}
+
+async function handleLogin(req: Request): Promise<Response> {
+  let body: { username?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return Response.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  const username = body.username?.trim();
+  if (!username || !USERNAME_REGEX.test(username)) {
+    return Response.json(
+      { error: "Username must be 3-20 letters, numbers, or _" },
+      { status: 400 }
+    );
+  }
+
+  if (username.toLowerCase() === "guest") {
+    return Response.json({ error: "reserved_username" }, { status: 400 });
+  }
+
+  let user = await getUserByUsername(username);
+  const created = !user;
+  if (!user) {
+    user = await createUser(username);
+    if (!user) {
+      return Response.json(
+        { error: "Failed to create user" },
+        { status: 500 }
+      );
+    }
+  }
+
+  user = await ensureAdminFlag(user);
+  const token = createSession(user.id);
+  return jsonWithCookie(
+    { user: { id: user.id, username: user.username, isAdmin: !!user.isAdmin }, created },
+    buildSessionCookie(token, SESSION_MAX_AGE_SECONDS)
+  );
+}
+
+async function handleMe(req: Request): Promise<Response> {
+  const token = getSessionToken(req);
+  if (!token) {
+    return Response.json({ user: null });
+  }
+
+  const session = sessions.get(token);
+  if (!session) {
+    return Response.json({ user: null });
+  }
+
+  let user = await getUserById(session.userId);
+  if (!user) {
+    sessions.delete(token);
+    return Response.json({ user: null });
+  }
+
+  user = await ensureAdminFlag(user);
+  session.lastSeenAt = new Date();
+  return jsonWithCookie(
+    { user: { id: user.id, username: user.username, isAdmin: !!user.isAdmin } },
+    buildSessionCookie(token, SESSION_MAX_AGE_SECONDS)
+  );
+}
+
+async function handleLogout(req: Request): Promise<Response> {
+  const token = getSessionToken(req);
+  if (token) {
+    sessions.delete(token);
+  }
+  return jsonWithCookie({ success: true }, clearSessionCookie());
+}
+
+export function getUserIdFromRequest(req: Request): string | null {
+  const cookies = parseCookies(req.headers.get("cookie"));
+  const token = cookies.session;
+  if (!token) return null;
+  const session = sessions.get(token);
+  if (!session) return null;
+  session.lastSeenAt = new Date();
+  return session.userId;
+}
+
+export async function handleAuthApi(req: Request): Promise<Response> {
+  const url = new URL(req.url);
+  const path = url.pathname;
+  const method = req.method;
+
+  if (method === "POST" && path === "/api/auth/login") {
+    return handleLogin(req);
+  }
+
+  if (method === "GET" && path === "/api/auth/me") {
+    return handleMe(req);
+  }
+
+  if (method === "POST" && path === "/api/auth/logout") {
+    return handleLogout(req);
+  }
+
+  return Response.json(
+    { error: "Not found", path },
+    { status: 404 }
+  );
+}
