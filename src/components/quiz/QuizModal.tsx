@@ -37,6 +37,67 @@ type AdminTestResult = {
   acceptedAnswers?: string[];
 };
 
+type QuestionType = "mcq" | "select-all" | "written";
+
+type EditorState = {
+  mode: "create" | "edit";
+  id?: string;
+  type: QuestionType;
+  prompt: string;
+  explanation: string;
+  difficulty: 1 | 2 | 3;
+  basePoints: number;
+  tags: string[];
+  choices: string[];
+  correctIndex: number;
+  correctIndices: number[];
+  acceptedAnswersText: string;
+};
+
+const TAG_OPTIONS = [
+  "bscs",
+  "bsse",
+  "bsis",
+  "bsgd",
+  "bsaai",
+  "bsaie",
+  "hardware",
+  "internet",
+  "web",
+  "html",
+  "css",
+  "javascript",
+  "security",
+  "git",
+  "programming",
+  "data",
+  "ai",
+  "games",
+  "campus",
+  "capstone",
+  "enterprise",
+  "basics",
+  "privacy",
+  "performance",
+  "networks",
+  "testing",
+  "workflow",
+  "os",
+  "storage",
+  "tools",
+  "quality",
+  "safety",
+];
+
+const BASE_POINTS: Record<number, number> = {
+  1: 100,
+  2: 150,
+  3: 200,
+};
+
+const EMPTY_MCQ_CHOICES = ["", "", "", ""];
+const EMPTY_SELECT_CHOICES = ["", "", "", "", ""];
+
 export function QuizModal({ isOpen, onClose, isAdmin = false }: QuizModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>("quiz");
   const [mode, setMode] = useState<"daily" | "test">("daily");
@@ -54,6 +115,10 @@ export function QuizModal({ isOpen, onClose, isAdmin = false }: QuizModalProps) 
   const [sequenceIndex, setSequenceIndex] = useState(0);
   const [sequenceMessage, setSequenceMessage] = useState<string | null>(null);
   const testStartRef = useRef<number | null>(null);
+  const [editorState, setEditorState] = useState<EditorState | null>(null);
+  const [editorError, setEditorError] = useState<string | null>(null);
+  const [editorSaving, setEditorSaving] = useState(false);
+  const [tagDropdownOpen, setTagDropdownOpen] = useState(false);
   const quiz = useQuiz();
 
   useEffect(() => {
@@ -62,38 +127,33 @@ export function QuizModal({ isOpen, onClose, isAdmin = false }: QuizModalProps) 
     }
   }, [isAdmin, activeTab]);
 
+  const refreshAdminQuestions = useCallback(async () => {
+    setAdminLoading(true);
+    setAdminError(null);
+    try {
+      const res = await fetch("/api/admin/questions");
+      const data = (await res.json()) as { questions?: Question[] };
+      if (!res.ok) {
+        throw new Error("Failed to load questions");
+      }
+      setAdminQuestions(data.questions ?? []);
+      if (!selectedQuestionId && data.questions?.length) {
+        setSelectedQuestionId(data.questions[0].id);
+      }
+    } catch {
+      setAdminError("Failed to load admin questions");
+    } finally {
+      setAdminLoading(false);
+    }
+  }, [selectedQuestionId]);
+
   useEffect(() => {
     if (!isOpen || !isAdmin) return;
-    let cancelled = false;
-    const loadQuestions = async () => {
-      setAdminLoading(true);
-      setAdminError(null);
-      try {
-        const res = await fetch("/api/admin/questions");
-        const data = (await res.json()) as { questions?: Question[] };
-        if (!res.ok) {
-          throw new Error("Failed to load questions");
-        }
-        if (!cancelled) {
-          setAdminQuestions(data.questions ?? []);
-          if (!selectedQuestionId && data.questions?.length) {
-            setSelectedQuestionId(data.questions[0].id);
-          }
-        }
-      } catch {
-        if (!cancelled) {
-          setAdminError("Failed to load admin questions");
-        }
-      } finally {
-        if (!cancelled) {
-          setAdminLoading(false);
-        }
-      }
+    const load = async () => {
+      await refreshAdminQuestions();
     };
-    loadQuestions();
-    return () => {
-      cancelled = true;
-    };
+    load();
+    return () => {};
   }, [isOpen, isAdmin]);
 
   const handleClose = useCallback(() => {
@@ -236,6 +296,273 @@ export function QuizModal({ isOpen, onClose, isAdmin = false }: QuizModalProps) 
     setSequenceMessage(null);
     quiz.reset();
     setActiveTab("quiz");
+  };
+
+  const getTruncatedPrompt = (prompt: string) => {
+    if (prompt.length <= 80) return prompt;
+    return `${prompt.slice(0, 77)}...`;
+  };
+
+  const openCreateEditor = () => {
+    setEditorError(null);
+    setEditorState({
+      mode: "create",
+      type: "mcq",
+      prompt: "",
+      explanation: "",
+      difficulty: 1,
+      basePoints: BASE_POINTS[1],
+      tags: [],
+      choices: [...EMPTY_MCQ_CHOICES],
+      correctIndex: 0,
+      correctIndices: [0],
+      acceptedAnswersText: "",
+    });
+  };
+
+  const openEditEditor = (question: Question) => {
+    setEditorError(null);
+    setEditorState({
+      mode: "edit",
+      id: question.id,
+      type: question.type,
+      prompt: question.prompt ?? "",
+      explanation: question.explanation ?? "",
+      difficulty: question.difficulty,
+      basePoints: question.basePoints,
+      tags: question.tags ?? [],
+      choices: question.type === "written" ? [...EMPTY_MCQ_CHOICES] : [...(question.choices ?? [])],
+      correctIndex: question.type === "mcq" ? question.correctIndex : 0,
+      correctIndices:
+        question.type === "select-all"
+          ? [...question.correctIndices]
+          : question.type === "mcq"
+            ? [question.correctIndex]
+            : [],
+      acceptedAnswersText:
+        question.type === "written"
+          ? (question.acceptedAnswers ?? []).join("\n")
+          : "",
+    });
+  };
+
+  const closeEditor = () => {
+    setEditorState(null);
+    setEditorError(null);
+    setEditorSaving(false);
+    setTagDropdownOpen(false);
+  };
+
+  const handleTypeChange = (nextType: QuestionType) => {
+    if (!editorState) return;
+    if (editorState.type === nextType) return;
+
+    if (
+      (editorState.type === "mcq" && nextType === "select-all") ||
+      (editorState.type === "select-all" && nextType === "mcq")
+    ) {
+      const nextCorrectIndices =
+        editorState.type === "mcq"
+          ? [editorState.correctIndex]
+          : editorState.correctIndices.length > 0
+            ? editorState.correctIndices
+            : [0];
+      setEditorState({
+        ...editorState,
+        type: nextType,
+        choices:
+          nextType === "mcq"
+            ? editorState.choices.slice(0, 4)
+            : [...editorState.choices, "", ""].slice(0, 5),
+        correctIndex:
+          nextType === "mcq" ? nextCorrectIndices[0] ?? 0 : editorState.correctIndex,
+        correctIndices:
+          nextType === "select-all"
+            ? nextCorrectIndices
+            : editorState.correctIndices,
+        acceptedAnswersText: "",
+      });
+      return;
+    }
+
+    setEditorState({
+      ...editorState,
+      type: nextType,
+      choices: nextType === "select-all" ? [...EMPTY_SELECT_CHOICES] : [...EMPTY_MCQ_CHOICES],
+      correctIndex: 0,
+      correctIndices: nextType === "select-all" ? [0] : [],
+      acceptedAnswersText: "",
+    });
+  };
+
+  const handleDifficultyChange = (difficulty: 1 | 2 | 3) => {
+    if (!editorState) return;
+    setEditorState({
+      ...editorState,
+      difficulty,
+      basePoints: BASE_POINTS[difficulty],
+    });
+  };
+
+  const toggleTag = (tag: string) => {
+    if (!editorState) return;
+    const exists = editorState.tags.includes(tag);
+    const nextTags = exists
+      ? editorState.tags.filter((item) => item !== tag)
+      : [...editorState.tags, tag];
+    setEditorState({ ...editorState, tags: nextTags });
+  };
+
+  const updateChoice = (index: number, value: string) => {
+    if (!editorState) return;
+    const next = [...editorState.choices];
+    next[index] = value;
+    setEditorState({ ...editorState, choices: next });
+  };
+
+  const toggleCorrectIndex = (index: number) => {
+    if (!editorState) return;
+    if (editorState.type === "mcq") {
+      setEditorState({ ...editorState, correctIndex: index });
+      return;
+    }
+    const set = new Set(editorState.correctIndices);
+    if (set.has(index)) {
+      set.delete(index);
+    } else {
+      set.add(index);
+    }
+    setEditorState({ ...editorState, correctIndices: Array.from(set).sort() });
+  };
+
+  const handleAcceptedAnswersChange = (value: string) => {
+    if (!editorState) return;
+    setEditorState({ ...editorState, acceptedAnswersText: value });
+  };
+
+  const buildEditorPayload = () => {
+    if (!editorState) return null;
+    const payload: any = {
+      type: editorState.type,
+      prompt: editorState.prompt.trim(),
+      explanation: editorState.explanation.trim(),
+      difficulty: editorState.difficulty,
+      basePoints: editorState.basePoints,
+      tags: editorState.tags,
+    };
+
+    if (editorState.type === "mcq") {
+      payload.choices = editorState.choices.slice(0, 4);
+      payload.correctIndex = editorState.correctIndex;
+    }
+    if (editorState.type === "select-all") {
+      payload.choices = editorState.choices.slice(0, 5);
+      payload.correctIndices = editorState.correctIndices;
+    }
+    if (editorState.type === "written") {
+      payload.acceptedAnswers = editorState.acceptedAnswersText
+        .split("\n")
+        .map((line) => line.trim())
+        .filter((line) => line.length > 0);
+    }
+    return payload;
+  };
+
+  const validateEditor = () => {
+    if (!editorState) return { valid: false, error: "Missing editor state" };
+    if (!editorState.prompt.trim()) {
+      return { valid: false, error: "Prompt is required." };
+    }
+    if (editorState.tags.length < 2 || editorState.tags.length > 4) {
+      return { valid: false, error: "Select 2-4 tags." };
+    }
+    if (editorState.basePoints !== BASE_POINTS[editorState.difficulty]) {
+      return { valid: false, error: "Base points mismatch for difficulty." };
+    }
+    if (editorState.type === "mcq") {
+      if (editorState.choices.length !== 4 || editorState.choices.some((c) => !c.trim())) {
+        return { valid: false, error: "MCQ requires 4 non-empty choices." };
+      }
+      if (
+        !Number.isInteger(editorState.correctIndex) ||
+        editorState.correctIndex < 0 ||
+        editorState.correctIndex > 3
+      ) {
+        return { valid: false, error: "Pick a correct answer." };
+      }
+    }
+    if (editorState.type === "select-all") {
+      if (editorState.choices.length !== 5 || editorState.choices.some((c) => !c.trim())) {
+        return { valid: false, error: "Select-all requires 5 non-empty choices." };
+      }
+      if (editorState.correctIndices.length < 1) {
+        return { valid: false, error: "Select at least one correct answer." };
+      }
+    }
+    if (editorState.type === "written") {
+      const answers = editorState.acceptedAnswersText
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean);
+      if (answers.length < 1) {
+        return { valid: false, error: "Provide at least one accepted answer." };
+      }
+    }
+    return { valid: true, error: "" };
+  };
+
+  const handleSave = async () => {
+    if (!editorState) return;
+    const validation = validateEditor();
+    if (!validation.valid) {
+      setEditorError(validation.error);
+      return;
+    }
+    setEditorSaving(true);
+    setEditorError(null);
+    const payload = buildEditorPayload();
+    if (!payload) return;
+
+    try {
+      const res = await fetch(
+        editorState.mode === "create"
+          ? "/api/admin/questions"
+          : `/api/admin/questions/${editorState.id}`,
+        {
+          method: editorState.mode === "create" ? "POST" : "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
+      if (!res.ok) {
+        const data = (await res.json()) as { error?: string };
+        setEditorError(data.error ?? "Failed to save question");
+        return;
+      }
+      await refreshAdminQuestions();
+      closeEditor();
+    } catch {
+      setEditorError("Failed to save question");
+    } finally {
+      setEditorSaving(false);
+    }
+  };
+
+  const handleDeleteQuestion = async (id: string) => {
+    const confirmed = window.confirm("Delete this question?");
+    if (!confirmed) return;
+    try {
+      const res = await fetch(`/api/admin/questions/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        setAdminError("Failed to delete question");
+        return;
+      }
+      await refreshAdminQuestions();
+    } catch {
+      setAdminError("Failed to delete question");
+    }
   };
 
   if (!isOpen) return null;
@@ -545,27 +872,233 @@ export function QuizModal({ isOpen, onClose, isAdmin = false }: QuizModalProps) 
           )}
           {activeTab === "questions" && isAdmin && (
             <div className="quiz-admin-panel">
-              <h3>Questions</h3>
+              <div className="quiz-admin-header">
+                <h3>Questions</h3>
+                <button
+                  className="quiz-submit-btn quiz-admin-btn"
+                  onClick={openCreateEditor}
+                >
+                  Create Question
+                </button>
+              </div>
               {adminLoading && <p className="quiz-admin-status">Loading...</p>}
-              {adminError && (
-                <p className="quiz-feedback error">{adminError}</p>
-              )}
-              <div className="quiz-admin-list">
+              {adminError && <p className="quiz-feedback error">{adminError}</p>}
+              <div className="quiz-admin-table">
+                <div className="quiz-admin-table-row quiz-admin-table-head">
+                  <span>ID</span>
+                  <span>Type</span>
+                  <span>Diff</span>
+                  <span>Prompt</span>
+                  <span>Tags</span>
+                </div>
                 {orderedQuestions.map((question) => (
-                  <button
-                    key={question.id}
-                    type="button"
-                    className="quiz-admin-list-item"
-                    onClick={() => {
-                      setSelectedQuestionId(question.id);
-                      loadTestQuestion(question.id, null);
-                    }}
-                  >
+                  <div className="quiz-admin-table-row" key={question.id}>
                     <span>{question.id}</span>
-                    <span>{question.prompt}</span>
-                  </button>
+                    <span>{question.type}</span>
+                    <span>{question.difficulty}</span>
+                    <span title={question.prompt}>
+                      {getTruncatedPrompt(question.prompt)}
+                    </span>
+                    <span className="quiz-admin-tags">
+                      {(question.tags ?? []).join(", ")}
+                    </span>
+                    <div className="quiz-admin-row-actions">
+                      <button
+                        type="button"
+                        className="quiz-admin-icon-btn"
+                        aria-label="Edit"
+                        onClick={() => openEditEditor(question)}
+                      >
+                        ✎
+                      </button>
+                      <button
+                        type="button"
+                        className="quiz-admin-icon-btn"
+                        aria-label="Delete"
+                        onClick={() => handleDeleteQuestion(question.id)}
+                      >
+                        🗑
+                      </button>
+                    </div>
+                  </div>
                 ))}
               </div>
+              {editorState && (
+                <div className="quiz-admin-modal">
+                  <div className="quiz-admin-modal-panel">
+                    <div className="quiz-admin-modal-header">
+                      <h3>
+                        {editorState.mode === "create" ? "Create" : "Edit"} Question
+                      </h3>
+                      <button
+                        type="button"
+                        className="quiz-admin-icon-btn"
+                        onClick={closeEditor}
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div className="quiz-admin-form">
+                      {editorState.mode === "edit" && (
+                        <label className="quiz-admin-field">
+                          <span>ID</span>
+                          <input value={editorState.id ?? ""} disabled />
+                        </label>
+                      )}
+                      <label className="quiz-admin-field">
+                        <span>Type</span>
+                        <select
+                          value={editorState.type}
+                          onChange={(event) =>
+                            handleTypeChange(event.target.value as QuestionType)
+                          }
+                        >
+                          <option value="mcq">mcq</option>
+                          <option value="select-all">select-all</option>
+                          <option value="written">written</option>
+                        </select>
+                      </label>
+                      <label className="quiz-admin-field">
+                        <span>Prompt</span>
+                        <textarea
+                          value={editorState.prompt}
+                          onChange={(event) =>
+                            setEditorState({
+                              ...editorState,
+                              prompt: event.target.value,
+                            })
+                          }
+                        />
+                      </label>
+                      <label className="quiz-admin-field">
+                        <span>Explanation</span>
+                        <textarea
+                          value={editorState.explanation}
+                          onChange={(event) =>
+                            setEditorState({
+                              ...editorState,
+                              explanation: event.target.value,
+                            })
+                          }
+                        />
+                      </label>
+                      <div className="quiz-admin-row">
+                        <label className="quiz-admin-field">
+                          <span>Difficulty</span>
+                          <select
+                            value={editorState.difficulty}
+                            onChange={(event) =>
+                              handleDifficultyChange(
+                                Number(event.target.value) as 1 | 2 | 3
+                              )
+                            }
+                          >
+                            <option value={1}>1</option>
+                            <option value={2}>2</option>
+                            <option value={3}>3</option>
+                          </select>
+                        </label>
+                        <label className="quiz-admin-field">
+                          <span>Base Points</span>
+                          <input value={editorState.basePoints} disabled />
+                        </label>
+                      </div>
+                      <div className="quiz-admin-field">
+                        <span>Tags</span>
+                        <button
+                          type="button"
+                          className="quiz-admin-tag-toggle"
+                          onClick={() => setTagDropdownOpen((prev) => !prev)}
+                        >
+                          {editorState.tags.length
+                            ? editorState.tags.join(", ")
+                            : "Select tags"}
+                        </button>
+                        {tagDropdownOpen && (
+                          <div className="quiz-admin-tag-menu">
+                            {TAG_OPTIONS.map((tag) => (
+                              <label key={tag} className="quiz-admin-tag-option">
+                                <input
+                                  type="checkbox"
+                                  checked={editorState.tags.includes(tag)}
+                                  onChange={() => toggleTag(tag)}
+                                />
+                                <span>{tag}</span>
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                        <span className="quiz-admin-helper">
+                          Pick 2–4 tags.
+                        </span>
+                      </div>
+                      {(editorState.type === "mcq" ||
+                        editorState.type === "select-all") && (
+                        <div className="quiz-admin-field">
+                          <span>Choices</span>
+                          <div className="quiz-admin-choice-grid">
+                            {editorState.choices.map((choice, index) => (
+                              <div className="quiz-admin-choice" key={index}>
+                                <input
+                                  type={
+                                    editorState.type === "mcq" ? "radio" : "checkbox"
+                                  }
+                                  checked={
+                                    editorState.type === "mcq"
+                                      ? editorState.correctIndex === index
+                                      : editorState.correctIndices.includes(index)
+                                  }
+                                  onChange={() => toggleCorrectIndex(index)}
+                                />
+                                <input
+                                  type="text"
+                                  value={choice}
+                                  onChange={(event) =>
+                                    updateChoice(index, event.target.value)
+                                  }
+                                  placeholder={`Choice ${index + 1}`}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {editorState.type === "written" && (
+                        <div className="quiz-admin-field">
+                          <span>Accepted Answers (one per line)</span>
+                          <textarea
+                            value={editorState.acceptedAnswersText}
+                            onChange={(event) =>
+                              handleAcceptedAnswersChange(event.target.value)
+                            }
+                            placeholder="answer one\nanswer two"
+                          />
+                        </div>
+                      )}
+                      {editorError && (
+                        <p className="quiz-feedback error">{editorError}</p>
+                      )}
+                      <div className="quiz-admin-row quiz-admin-actions">
+                        <button
+                          type="button"
+                          className="quiz-submit-btn quiz-admin-btn"
+                          onClick={closeEditor}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          className="quiz-submit-btn quiz-admin-btn"
+                          onClick={handleSave}
+                          disabled={editorSaving || !validateEditor().valid}
+                        >
+                          {editorSaving ? "Saving..." : "Save"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
