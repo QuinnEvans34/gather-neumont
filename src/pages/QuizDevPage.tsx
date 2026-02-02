@@ -227,9 +227,6 @@ export default function QuizDevPage() {
   };
 
   const getRankIcon = (rank: number) => {
-    if (rank === 1) return "🥇";
-    if (rank === 2) return "🥈";
-    if (rank === 3) return "🥉";
     return String(rank);
   };
 
@@ -345,30 +342,37 @@ export default function QuizDevPage() {
   };
 
   const renderPodiumGroup = (
-    label: string,
+    rankNum: number,
     entries: LeaderboardEntry[],
     emptyLabel: string
   ) => {
     const visible = entries.slice(0, 3);
     const remaining = entries.length - visible.length;
+    const isTied = entries.length > 1;
 
     if (entries.length === 0) {
-      return <p className="quiz-dev-podium-empty">{emptyLabel}</p>;
+      return (
+        <div className="podium-content">
+          <span className="podium-empty">{emptyLabel}</span>
+        </div>
+      );
     }
 
     return (
-      <div className="quiz-dev-podium-list">
-        {visible.map((entry) => (
-          <div className="quiz-dev-podium-entry" key={`${label}-${entry.username}`}>
-            <span className="quiz-dev-podium-name">{entry.username}</span>
-            <span className="quiz-dev-podium-meta">
-              Streak: {entry.longestStreak} • {entry.totalPoints} pts
-            </span>
-          </div>
-        ))}
-        {remaining > 0 && (
-          <span className="quiz-dev-podium-more">+{remaining} more</span>
+      <div className="podium-content">
+        {isTied && (
+          <span className="podium-tie-label">Tied for #{rankNum}</span>
         )}
+        <div className="podium-names">
+          {visible.map((entry, idx) => (
+            <span className="podium-name" key={`${rankNum}-${entry.username}-${idx}`}>
+              {entry.username}
+            </span>
+          ))}
+          {remaining > 0 && (
+            <span className="podium-more">+{remaining} more</span>
+          )}
+        </div>
       </div>
     );
   };
@@ -387,43 +391,56 @@ export default function QuizDevPage() {
   }, []);
 
   return (
-    <div className="quiz-dev-page quiz-ui">
-      <div className="quiz-ui">
+    <div className="quiz-dev-shell">
+      <div className="quiz-ui quiz-dev-panel">
+        <div className="quiz-dev-page">
         {!showMainUi ? (
-          <main className="quiz-dev-content">
-            <div className="quiz-dev-placeholder">
-              <h2>Daily Quiz</h2>
-              <p>Sign in or continue as guest to access the quiz.</p>
-              <div className="quiz-dev-auth">
-                {guestWarning ? (
-                  <div className="quiz-dev-auth-warning">
-                    <p>
-                      If you proceed as guest, none of your progress will be saved.
-                    </p>
-                    <p>Create an account to save your progress.</p>
-                    <div className="quiz-dev-auth-row">
-                      <button
-                        type="button"
-                        className="quiz-dev-auth-btn"
-                        onClick={handleGuestContinue}
-                        disabled={authLoading}
-                      >
-                        Continue as Guest
-                      </button>
-                      <button
-                        type="button"
-                        className="quiz-dev-auth-btn"
-                        onClick={handleGuestChange}
-                        disabled={authLoading}
-                      >
-                        Change Username
-                      </button>
-                    </div>
+          <main className="quiz-dev-content quiz-dev-content--login">
+            <div className="login-card">
+              <div className="login-header">
+                <h1 className="login-title">Daily Quiz</h1>
+                <p className="login-subtitle">Sign in to track your progress and compete on the leaderboard.</p>
+              </div>
+              
+              {guestWarning ? (
+                <div className="login-guest-warning">
+                  <div className="login-warning-icon">
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                      <path d="M9 16.5C13.1421 16.5 16.5 13.1421 16.5 9C16.5 4.85786 13.1421 1.5 9 1.5C4.85786 1.5 1.5 4.85786 1.5 9C1.5 13.1421 4.85786 16.5 9 16.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M9 6V9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M9 12H9.0075" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
                   </div>
-                ) : (
-                  <form className="quiz-dev-auth-row" onSubmit={handleLogin}>
+                  <div className="login-warning-content">
+                    <p className="login-warning-title">Guest Mode</p>
+                    <p className="login-warning-text">
+                      Your progress won't be saved. Create an account to save your progress and appear on the leaderboard.
+                    </p>
+                  </div>
+                  <div className="login-warning-actions">
+                    <button
+                      type="button"
+                      className="login-btn login-btn--secondary"
+                      onClick={handleGuestChange}
+                      disabled={authLoading}
+                    >
+                      Change Username
+                    </button>
+                    <button
+                      type="button"
+                      className="login-btn login-btn--warning"
+                      onClick={handleGuestContinue}
+                      disabled={authLoading}
+                    >
+                      Continue as Guest
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <form className="login-form" onSubmit={handleLogin}>
+                  <div className="login-input-group">
                     <input
-                      className="quiz-dev-auth-input"
+                      className="login-input"
                       type="text"
                       name="username"
                       value={usernameInput}
@@ -432,21 +449,21 @@ export default function QuizDevPage() {
                       onChange={(event) => setUsernameInput(event.target.value)}
                       disabled={authLoading}
                     />
-                    <button
-                      type="submit"
-                      className="quiz-dev-auth-btn"
-                      disabled={authLoading}
-                    >
-                      Log in
-                    </button>
-                  </form>
-                )}
-                {authError && (
-                  <p className="quiz-dev-auth-error" role="status">
-                    {authError}
-                  </p>
-                )}
-              </div>
+                  </div>
+                  <button
+                    type="submit"
+                    className="login-btn login-btn--primary"
+                    disabled={authLoading}
+                  >
+                    {authLoading ? "Signing in..." : "Sign In"}
+                  </button>
+                  {authError && (
+                    <p className="login-error" role="status">
+                      {authError}
+                    </p>
+                  )}
+                </form>
+              )}
             </div>
           </main>
         ) : (
@@ -486,263 +503,279 @@ export default function QuizDevPage() {
         </header>
 
         <main className="quiz-dev-content">
-          <div className="quiz-dev-placeholder">
-            <h2>Daily Quiz</h2>
-            {activeTab === "quiz" && (
-              <>
-                <p>Test the quiz experience as a guest user.</p>
-                <div className="quiz-dev-auth-row">
-                  <span className="quiz-dev-auth-status">
-                    {authUser ? (
-                      <>
-                        Logged in as <strong>{authUser.username}</strong>
-                      </>
-                    ) : (
-                      "Guest mode active"
-                    )}
-                  </span>
-                  <button
-                    type="button"
-                    className="quiz-dev-auth-btn"
-                    onClick={handleLogout}
-                    disabled={authLoading}
-                  >
-                    Log out
-                  </button>
+          {activeTab === "quiz" && (
+            <div className="quiz-tab-container">
+              <div className="quiz-tab-header">
+                <h1 className="quiz-tab-title">Daily Quiz</h1>
+                <p className="quiz-tab-subtitle">
+                  {authUser 
+                    ? `Logged in as ${authUser.username}` 
+                    : "Guest Mode — Progress won't be saved"}
+                </p>
+              </div>
+
+              <button className="quiz-primary-action" onClick={handleOpenQuiz}>
+                <span className="quiz-primary-action-text">Start Daily Quiz</span>
+                <svg className="quiz-primary-action-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+
+              {topStreak && (
+                <div className="quiz-info-section">
+                  <span className="quiz-section-label">Current Leader</span>
+                  <div className="quiz-streak-card">
+                    <div className="quiz-streak-user">
+                      <span className="quiz-streak-rank-badge" data-rank="1">
+                        #1
+                      </span>
+                      <span className="quiz-streak-username">{topStreak.username}</span>
+                    </div>
+                    <div className="quiz-streak-stats">
+                      <div className="quiz-streak-stat">
+                        <span className="quiz-streak-stat-value">{topStreak.longestStreak}</span>
+                        <span className="quiz-streak-stat-label">Streak</span>
+                      </div>
+                      <div className="quiz-streak-divider"></div>
+                      <div className="quiz-streak-stat">
+                        <span className="quiz-streak-stat-value">{topStreak.totalPoints}</span>
+                        <span className="quiz-streak-stat-label">Points</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <button className="quiz-dev-open-btn" onClick={handleOpenQuiz}>
-                  Open Daily Quiz
+              )}
+
+              <div className="quiz-account-section">
+                <button
+                  type="button"
+                  className="quiz-logout-btn"
+                  onClick={handleLogout}
+                  disabled={authLoading}
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path d="M6 14H3.33333C2.97971 14 2.64057 13.8595 2.39052 13.6095C2.14048 13.3594 2 13.0203 2 12.6667V3.33333C2 2.97971 2.14048 2.64057 2.39052 2.39052C2.64057 2.14048 2.97971 2 3.33333 2H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M10.6667 11.3333L14 8L10.6667 4.66667" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M14 8H6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Sign Out
                 </button>
-                {topStreak && (
-                  <div className="quiz-dev-streak-preview">
-                    <span className="quiz-dev-streak-label">
-                      Current Highest Streak
-                    </span>
-                    <div className="quiz-dev-streak-row">
-                      <span className="quiz-dev-streak-user">
-                        {getRankIcon(topStreak.rank)} {topStreak.username}
-                      </span>
-                      <span className="quiz-dev-streak-meta">
-                        Streak: {topStreak.longestStreak} • {topStreak.totalPoints} pts
-                      </span>
+              </div>
+            </div>
+          )}
+          {activeTab === "leaderboard" && (
+            <section className="quiz-dev-leaderboard">
+                <div className="lb-layout">
+                  <div className="lb-left">
+                    <div className="lb-left-header">
+                      <div className="lb-header-content">
+                        <h3>Leaderboard</h3>
+                        {(useDemoLeaderboard || leaderboardUsingDemo) && (
+                          <span className="quiz-dev-demo-label">Demo</span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </>
-            )}
-            {activeTab === "leaderboard" && (
-              <section className="quiz-dev-leaderboard">
-                <div className="quiz-dev-leaderboard-header">
-                  <h3>Leaderboard</h3>
-                  {(useDemoLeaderboard || leaderboardUsingDemo) && (
-                    <span className="quiz-dev-demo-label">Demo data</span>
-                  )}
-                  <button
-                    type="button"
-                    className="quiz-dev-auth-btn"
-                    onClick={loadLeaderboard}
-                    disabled={leaderboardLoading}
-                  >
-                    {leaderboardLoading ? "Refreshing..." : "Refresh"}
-                  </button>
-                </div>
-                <div className="quiz-dev-toggle-row">
-                  <label className="quiz-dev-toggle">
-                    <input
-                      type="checkbox"
-                      checked={useDemoLeaderboard}
-                      onChange={(event) => {
-                        setUseDemoLeaderboard(event.target.checked);
-                        leaderboardLoadedRef.current = false;
-                        leaderboardScrollRef.current = false;
-                        if (event.target.checked) {
-                          setLeaderboardUsingDemo(true);
-                          setLeaderboard(DEMO_LEADERBOARD.entries);
-                        } else {
-                          setLeaderboardUsingDemo(false);
-                          setLeaderboard([]);
-                        }
-                      }}
-                    />
-                    <span>Use demo leaderboard</span>
-                  </label>
-                </div>
-                <div className="quiz-dev-leaderboard-summary">
-                  {myEntry ? (
-                    rankAnimActive && !rankAnimDone ? (
-                      <div className="quiz-dev-rank-anim">
-                        <span className="quiz-dev-rank-anim-text">
-                          Finding your rank…
-                        </span>
-                        <div className="quiz-dev-rank-bar">
-                          <div
-                            className="quiz-dev-rank-bar-fill"
-                            style={{
-                              width: `${
-                                myEntry.rank
-                                  ? Math.min(
-                                      100,
-                                      Math.round(
-                                        (rankAnimValue / myEntry.rank) * 100
-                                      )
-                                    )
-                                  : 0
-                              }%`,
-                            }}
-                          />
-                        </div>
-                        <span className="quiz-dev-rank-count">
-                          #{rankAnimValue}
-                        </span>
-                      </div>
-                    ) : (
-                      <div className="quiz-dev-your-position">
-                        <span className="quiz-dev-your-position-title">
-                          Your Position
-                        </span>
-                        <div className="quiz-dev-your-position-grid">
-                          <div>
-                            <span className="quiz-dev-your-position-label">
-                              Your Rank
-                            </span>
-                            <span className="quiz-dev-your-position-value">
-                              #{myEntry.rank}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="quiz-dev-your-position-label">
-                              Best Streak
-                            </span>
-                            <span className="quiz-dev-your-position-value">
-                              Streak: {myEntry.longestStreak}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="quiz-dev-your-position-label">
-                              Points
-                            </span>
-                            <span className="quiz-dev-your-position-value">
-                              {myEntry.totalPoints}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  ) : (
-                    <p className="quiz-dev-leaderboard-empty">
-                      No leaderboard entry yet. Complete a quiz to appear.
-                    </p>
-                  )}
-                </div>
-                <div className="quiz-dev-podium">
-                  <div className="quiz-dev-podium-col">
-                    <span className="quiz-dev-podium-label">
-                    {podiumGroups.second.length > 1 ? "Tied for #2" : "Second Place"}
-                    </span>
-                    {renderPodiumGroup(
-                      "second",
-                      podiumGroups.second,
-                      "No one yet"
-                    )}
-                  </div>
-                  <div className="quiz-dev-podium-col primary">
-                    <span className="quiz-dev-podium-label">
-                    {podiumGroups.first.length > 1 ? "Tied for #1" : "First Place"}
-                    </span>
-                    {renderPodiumGroup(
-                      "first",
-                      podiumGroups.first,
-                      "No one yet"
-                    )}
-                  </div>
-                  <div className="quiz-dev-podium-col">
-                    <span className="quiz-dev-podium-label">
-                    {podiumGroups.third.length > 1 ? "Tied for #3" : "Third Place"}
-                    </span>
-                    {renderPodiumGroup(
-                      "third",
-                      podiumGroups.third,
-                      "No one yet"
-                    )}
-                  </div>
-                </div>
-                {leaderboardError && (
-                  <p className="quiz-dev-auth-error" role="status">
-                    {leaderboardError}
-                  </p>
-                )}
-                {entries.length === 0 ? (
-                  <p className="quiz-dev-leaderboard-empty">
-                    No leaderboard entries yet.
-                  </p>
-                ) : (
-                  <div className="leaderboard-scroll">
-                    <div className="quiz-dev-leaderboard-table" role="table">
-                      <div
-                        className="quiz-dev-leaderboard-row quiz-dev-leaderboard-head"
-                        role="row"
+                    
+                    <div className="lb-controls">
+                      <label className="lb-toggle">
+                        <input
+                          type="checkbox"
+                          checked={useDemoLeaderboard}
+                          onChange={(event) => {
+                            setUseDemoLeaderboard(event.target.checked);
+                            leaderboardLoadedRef.current = false;
+                            leaderboardScrollRef.current = false;
+                            if (event.target.checked) {
+                              setLeaderboardUsingDemo(true);
+                              setLeaderboard(DEMO_LEADERBOARD.entries);
+                            } else {
+                              setLeaderboardUsingDemo(false);
+                              setLeaderboard([]);
+                            }
+                          }}
+                        />
+                        <span>Use demo data</span>
+                      </label>
+                      <button
+                        type="button"
+                        className="lb-refresh-btn"
+                        onClick={loadLeaderboard}
+                        disabled={leaderboardLoading}
                       >
-                        <span>User</span>
-                        <span>Longest Streak</span>
-                        <span>Total Points</span>
-                      </div>
-                      {entries.map((entry) => {
-                        const isMe =
-                          authUser?.username?.toLowerCase() ===
-                          entry.username.toLowerCase();
-                        return (
-                          <div
-                            className={`quiz-dev-leaderboard-row ${
-                              isMe ? "leaderboard-row--me" : ""
-                            }`}
-                            data-username={entry.username.toLowerCase()}
-                            key={`${entry.rank}-${entry.username}`}
-                            role="row"
-                          >
-                            <span className="quiz-dev-rank-user">
-                              <span className="quiz-dev-rank-icon">
-                                {getRankIcon(entry.rank)}
-                              </span>
-                              <span>{entry.username}</span>
-                              {isMe && (
-                              <span className="quiz-dev-you-badge">YOU</span>
-                              )}
-                            </span>
-                            <span>Streak: {entry.longestStreak}</span>
-                            <span>{entry.totalPoints}</span>
+                        {leaderboardLoading ? "Refreshing..." : "Refresh"}
+                      </button>
+                    </div>
+
+                    {myEntry ? (
+                      rankAnimActive && !rankAnimDone ? (
+                        <div className="lb-your-card lb-finding">
+                          <span className="lb-finding-text">
+                            Finding your rank…
+                          </span>
+                          <div className="lb-finding-bar">
+                            <div
+                              className="lb-finding-bar-fill"
+                              style={{
+                                width: `${
+                                  myEntry.rank
+                                    ? Math.min(
+                                        100,
+                                        Math.round(
+                                          (rankAnimValue / myEntry.rank) * 100
+                                        )
+                                      )
+                                    : 0
+                                }%`,
+                              }}
+                            />
                           </div>
-                        );
-                      })}
+                          <span className="lb-finding-count">
+                            #{rankAnimValue}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="lb-your-card">
+                          <span className="lb-your-title">Your Position</span>
+                          <div className="lb-your-stats">
+                            <div className="lb-stat">
+                              <span className="lb-stat-label">Rank</span>
+                              <span className="lb-stat-value">#{myEntry.rank}</span>
+                            </div>
+                            <div className="lb-stat-separator"></div>
+                            <div className="lb-stat">
+                              <span className="lb-stat-label">Streak</span>
+                              <span className="lb-stat-value">{myEntry.longestStreak}</span>
+                            </div>
+                            <div className="lb-stat-separator"></div>
+                            <div className="lb-stat">
+                              <span className="lb-stat-label">Points</span>
+                              <span className="lb-stat-value">{myEntry.totalPoints}</span>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    ) : authUser && !useDemoLeaderboard && !leaderboardUsingDemo ? (
+                      <div className="lb-your-card lb-empty">
+                        <span className="lb-empty-text">
+                          Complete a quiz to appear on the leaderboard.
+                        </span>
+                      </div>
+                    ) : null}
+
+                    <div className="lb-top-summary">
+                      <span className="lb-top-summary-label">Top Performers</span>
+                      <div className="lb-podium">
+                        <div className="lb-podium-col lb-podium-second">
+                          <span className="podium-rank-badge" data-rank="2">#2</span>
+                          {renderPodiumGroup(
+                            2,
+                            podiumGroups.second,
+                            "No one yet"
+                          )}
+                        </div>
+                        <div className="lb-podium-col lb-podium-first">
+                          <span className="podium-rank-badge" data-rank="1">#1</span>
+                          {renderPodiumGroup(
+                            1,
+                            podiumGroups.first,
+                            "No one yet"
+                          )}
+                        </div>
+                        <div className="lb-podium-col lb-podium-third">
+                          <span className="podium-rank-badge" data-rank="3">#3</span>
+                          {renderPodiumGroup(
+                            3,
+                            podiumGroups.third,
+                            "No one yet"
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {leaderboardError && (
+                      <p className="lb-error" role="status">
+                        {leaderboardError}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="lb-right">
+                    <div className="lb-table-header" role="row">
+                      <span>Rank</span>
+                      <span>User</span>
+                      <span>Streak</span>
+                      <span>Points</span>
+                    </div>
+                    <div className="lb-table-scroll">
+                      {entries.length === 0 ? (
+                        <div className="lb-table-empty">
+                          No entries yet.
+                        </div>
+                      ) : (
+                        <div className="lb-table-body" role="table">
+                          {entries.map((entry, index) => {
+                            const isMe =
+                              authUser?.username?.toLowerCase() ===
+                              entry.username.toLowerCase();
+                            const showDivider = index > 0 && (index === 3 || index === 10 || index % 10 === 0);
+                            return (
+                              <>
+                                {showDivider && <div className="lb-table-divider" key={`divider-${index}`}></div>}
+                                <div
+                                  className={`lb-table-row ${
+                                    isMe ? "lb-table-row--me" : ""
+                                  }`}
+                                  data-username={entry.username.toLowerCase()}
+                                  key={`${entry.rank}-${entry.username}`}
+                                  role="row"
+                                >
+                                  <span className="lb-table-rank">
+                                    <span className="lb-rank-badge" data-rank={entry.rank}>
+                                      {entry.rank}
+                                    </span>
+                                  </span>
+                                  <span className="lb-table-user">
+                                    {entry.username}
+                                    {isMe && (
+                                      <span className="lb-you-badge">YOU</span>
+                                    )}
+                                  </span>
+                                  <span className="lb-table-streak">{entry.longestStreak}</span>
+                                  <span className="lb-table-points">{entry.totalPoints}</span>
+                                </div>
+                              </>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   </div>
-                )}
-              </section>
-            )}
-            {activeTab === "admin" && authUser?.isAdmin && (
-              <section className="quiz-dev-admin-panel">
-                <p>Admin tools live inside the quiz modal for now.</p>
-                <div className="quiz-dev-auth-row">
-                  <button
-                    type="button"
-                    className="quiz-dev-auth-btn"
-                    onClick={handleOpenAdminPanel}
-                  >
-                    Open Admin Panel
-                  </button>
-                  <button
-                    type="button"
-                    className="quiz-dev-auth-btn"
-                    onClick={handleOpenQuiz}
-                  >
-                    Open Quiz
-                  </button>
                 </div>
               </section>
             )}
-          </div>
+          {activeTab === "admin" && authUser?.isAdmin && (
+            <div className="quiz-tab-container">
+              <div className="quiz-tab-header">
+                <h1 className="quiz-tab-title">Admin Panel</h1>
+                <p className="quiz-tab-subtitle">Manage questions, schedule, and quiz settings.</p>
+              </div>
+
+              <button
+                type="button"
+                className="quiz-primary-action"
+                onClick={handleOpenAdminPanel}
+              >
+                <span className="quiz-primary-action-text">Open Admin Panel</span>
+                <svg className="quiz-primary-action-icon" width="20" height="20" viewBox="0 0 20 20" fill="none">
+                  <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
+            </div>
+          )}
         </main>
           </>
         )}
+        </div>
       </div>
 
       <QuizModal

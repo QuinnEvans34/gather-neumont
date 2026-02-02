@@ -1,4 +1,4 @@
-/* Quiz Cards Styles */
+/* Quiz Cards - Apple/Enterprise Answer Options */
 
 .quiz-cards-container {
   display: flex;
@@ -8,125 +8,147 @@
 .quiz-cards-list {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .quiz-card {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 16px 18px;
-  background: var(--surface, #1c1c1c);
+  gap: 14px;
+  padding: 14px 18px;
+  min-height: 52px;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 10px;
-  color: #e0e0e0;
+  color: var(--text);
   font-size: 15px;
   text-align: left;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  user-select: none;
+  position: relative;
 }
 
 .quiz-card:hover:not(:disabled) {
-  background: var(--surface-hover, #20284a);
-  box-shadow: 0 0 0 1px var(--outline-hover, rgba(233, 69, 96, 0.35));
+  background: var(--surface-hover);
+  border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
 }
 
 .quiz-card.selected {
-  background: var(--surface-selected, rgba(233, 69, 96, 0.08));
-  box-shadow: inset 4px 0 0 var(--accent, #e94560);
+  background: rgba(107, 126, 188, 0.08);
+  border-color: var(--accent);
+  border-left-width: 3px;
+  padding-left: 16px;
 }
 
 .quiz-card.wrong {
-  box-shadow: 0 0 0 2px var(--danger, #e55a6a);
-  background: rgba(229, 90, 106, 0.12);
+  border-color: var(--danger);
+  border-left-width: 3px;
+  padding-left: 16px;
+  background: rgba(214, 94, 94, 0.06);
 }
 
 .quiz-card.correct {
-  box-shadow: 0 0 0 2px var(--success, #4caf50);
-  background: rgba(76, 175, 80, 0.12);
+  border-color: var(--success);
+  border-left-width: 3px;
+  padding-left: 16px;
+  background: rgba(82, 201, 124, 0.06);
 }
 
 .quiz-card.shake {
-  animation: shake 0.25s ease-in-out;
+  animation: shake 0.3s cubic-bezier(0.36, 0.07, 0.19, 0.97);
 }
 
 @keyframes shake {
   0%, 100% {
     transform: translateX(0);
   }
-  20% {
-    transform: translateX(-3px);
+  25% {
+    transform: translateX(-4px);
   }
-  40% {
-    transform: translateX(3px);
+  50% {
+    transform: translateX(4px);
   }
-  60% {
-    transform: translateX(-3px);
-  }
-  80% {
-    transform: translateX(3px);
+  75% {
+    transform: translateX(-4px);
   }
 }
 
 .quiz-card:disabled {
   cursor: not-allowed;
-  opacity: 0.7;
+  opacity: 0.5;
 }
 
 .quiz-card-letter {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  background: var(--surface-strong, rgba(255, 255, 255, 0.08));
-  border-radius: 6px;
+  width: 32px;
+  height: 32px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  border-radius: 8px;
   font-size: 13px;
   font-weight: 600;
-  color: #888;
+  color: var(--text-muted);
   flex-shrink: 0;
 }
 
 .quiz-card.selected .quiz-card-letter {
-  background: rgba(233, 69, 96, 0.25);
-  color: var(--accent, #e94560);
+  background: rgba(107, 126, 188, 0.15);
+  border-color: var(--accent);
+  color: var(--accent);
 }
 
 .quiz-card.correct .quiz-card-letter {
-  background: rgba(76, 175, 80, 0.25);
-  color: var(--success, #4caf50);
+  background: rgba(82, 201, 124, 0.15);
+  border-color: var(--success);
+  color: var(--success);
+}
+
+.quiz-card.wrong .quiz-card-letter {
+  background: rgba(214, 94, 94, 0.15);
+  border-color: var(--danger);
+  color: var(--danger);
 }
 
 .quiz-card-text {
   flex: 1;
-  line-height: 1.4;
+  line-height: 1.5;
+  font-weight: 400;
 }
 
 .quiz-card-checkbox {
   width: 24px;
   height: 24px;
-  border: 2px solid rgba(255, 255, 255, 0.18);
-  border-radius: 4px;
+  border: 2px solid var(--border);
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 14px;
-  color: var(--accent, #e94560);
+  color: transparent;
   flex-shrink: 0;
-}
-
-.quiz-card-correct {
-  margin-left: 8px;
-  padding: 2px 6px;
-  border-radius: 999px;
-  background: rgba(80, 200, 120, 0.2);
-  color: #7be0a1;
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  transition: all 0.18s ease;
 }
 
 .quiz-card.selected .quiz-card-checkbox {
-  border-color: var(--accent, #e94560);
-  background: rgba(233, 69, 96, 0.2);
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--panel);
+}
+
+.quiz-card-correct {
+  margin-left: auto;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(82, 201, 124, 0.12);
+  border: 1px solid rgba(82, 201, 124, 0.3);
+  color: var(--success);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }

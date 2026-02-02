@@ -78,6 +78,12 @@
       "username": "quinton3",
       "isAdmin": false,
       "createdAt": "2026-02-02T03:09:05.435Z"
+    },
+    {
+      "id": "76f52f87-6fff-4e13-8089-f5f29068df6b",
+      "username": "qe3",
+      "isAdmin": false,
+      "createdAt": "2026-02-02T03:59:13.410Z"
     }
   ]
 }
