@@ -2,7 +2,7 @@
  * useQuiz hook - manages guest quiz flow state and API calls.
  */
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 
 // Generate a random guest token for this session
 function generateGuestToken(): string {
@@ -96,7 +96,17 @@ export function useQuiz(): UseQuizReturn {
   const [error, setError] = useState<string | null>(null);
   // Timer ref for tracking elapsed time
   const startTimeRef = useRef<number | null>(null);
+  const intervalRef = useRef<number | null>(null);
   const [elapsedMs, setElapsedMs] = useState(0);
+
+  useEffect(() => {
+    const ticking =
+      state === "active" || state === "incorrect" || state === "submitting";
+    if (!ticking && intervalRef.current) {
+      window.clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, [state]);
 
   const guestToken = getGuestToken();
 
@@ -131,6 +141,14 @@ export function useQuiz(): UseQuizReturn {
       setAttemptNumber(0);
       setLastResult(null);
       startTimeRef.current = Date.now();
+      if (intervalRef.current) {
+        window.clearInterval(intervalRef.current);
+      }
+      intervalRef.current = window.setInterval(() => {
+        if (startTimeRef.current) {
+          setElapsedMs(Date.now() - startTimeRef.current);
+        }
+      }, 250);
       setState("active");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
@@ -172,14 +190,23 @@ export function useQuiz(): UseQuizReturn {
         if (data.alreadyCompleted) {
           setQuestion(null);
           setState("completed");
+          if (intervalRef.current) {
+            window.clearInterval(intervalRef.current);
+            intervalRef.current = null;
+          }
         } else if (data.rollover && data.newQuestion) {
           // Day rolled over, update to new question
           setQuestion(data.newQuestion);
           setQuizDate(data.quizDate);
           startTimeRef.current = Date.now();
+          setElapsedMs(0);
           setState("active");
         } else if (data.correct) {
           setState("correct");
+          if (intervalRef.current) {
+            window.clearInterval(intervalRef.current);
+            intervalRef.current = null;
+          }
         } else {
           setState("incorrect");
         }
@@ -202,6 +229,10 @@ export function useQuiz(): UseQuizReturn {
     setLastResult(null);
     setError(null);
     startTimeRef.current = null;
+    if (intervalRef.current) {
+      window.clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
     setElapsedMs(0);
   }, []);
 

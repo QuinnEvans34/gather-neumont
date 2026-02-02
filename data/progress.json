@@ -120,6 +120,66 @@
         "completedAt": "2026-02-01T22:21:56.246Z",
         "elapsedMs": 1474
       }
+    },
+    {
+      "userId": "77ece66e-49b1-480c-b118-2b7d0f78b277",
+      "currentStreak": 1,
+      "longestStreak": 1,
+      "totalPoints": 166,
+      "lastCorrectDate": "2026-02-01",
+      "lastCompletion": {
+        "date": "2026-02-01",
+        "questionId": "q001",
+        "attemptsUsed": 1,
+        "pointsEarned": 166,
+        "completedAt": "2026-02-01T22:29:00.090Z",
+        "elapsedMs": 20821
+      }
+    },
+    {
+      "userId": "ecb5b1e6-2cac-45fd-b904-9ec24ca2e86a",
+      "currentStreak": 1,
+      "longestStreak": 1,
+      "totalPoints": 171,
+      "lastCorrectDate": "2026-02-01",
+      "lastCompletion": {
+        "date": "2026-02-01",
+        "questionId": "q001",
+        "attemptsUsed": 1,
+        "pointsEarned": 171,
+        "completedAt": "2026-02-02T02:25:14.439Z",
+        "elapsedMs": 8958
+      }
+    },
+    {
+      "userId": "7fb0d90c-422b-4394-86af-f29452513212",
+      "currentStreak": 1,
+      "longestStreak": 1,
+      "totalPoints": 174,
+      "lastCorrectDate": "2026-02-01",
+      "lastCompletion": {
+        "date": "2026-02-01",
+        "questionId": "q001",
+        "attemptsUsed": 1,
+        "pointsEarned": 174,
+        "completedAt": "2026-02-02T03:08:54.407Z",
+        "elapsedMs": 1565
+      }
+    },
+    {
+      "userId": "da29f53c-1ae7-4068-a790-7ad7deb7995f",
+      "currentStreak": 1,
+      "longestStreak": 1,
+      "totalPoints": 60,
+      "lastCorrectDate": "2026-02-01",
+      "lastCompletion": {
+        "date": "2026-02-01",
+        "questionId": "q001",
+        "attemptsUsed": 2,
+        "pointsEarned": 60,
+        "completedAt": "2026-02-02T03:09:14.243Z",
+        "elapsedMs": 6305
+      }
     }
   ]
 }

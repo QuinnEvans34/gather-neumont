@@ -1,0 +1,38 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap");
+
+.quiz-ui {
+  --font-sans: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --panel: #0f1428;
+  --surface: #151a33;
+  --surface-strong: #1f2647;
+  --surface-hover: #1a2140;
+  --surface-selected: #20284a;
+  --text: #e8ebf2;
+  --text-muted: #9aa3b2;
+  --faint: #7c869a;
+  --accent: #f6b54f;
+  --accent-ink: #2b1b00;
+  --success: #4caf50;
+  --danger: #e55a6a;
+  --focus: rgba(233, 69, 96, 0.55);
+  --outline-hover: rgba(233, 69, 96, 0.35);
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --shadow-1: 0 10px 30px rgba(0, 0, 0, 0.35);
+  --shadow-2: 0 26px 60px rgba(0, 0, 0, 0.55);
+
+  font-family: var(--font-sans);
+  color: var(--text);
+}
+
+.quiz-ui .nums {
+  font-variant-numeric: tabular-nums;
+}
