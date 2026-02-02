@@ -180,6 +180,21 @@
         "completedAt": "2026-02-02T03:09:14.243Z",
         "elapsedMs": 6305
       }
+    },
+    {
+      "userId": "76f52f87-6fff-4e13-8089-f5f29068df6b",
+      "currentStreak": 1,
+      "longestStreak": 1,
+      "totalPoints": 172,
+      "lastCorrectDate": "2026-02-01",
+      "lastCompletion": {
+        "date": "2026-02-01",
+        "questionId": "q001",
+        "attemptsUsed": 1,
+        "pointsEarned": 172,
+        "completedAt": "2026-02-02T03:59:22.825Z",
+        "elapsedMs": 7075
+      }
     }
   ]
 }
