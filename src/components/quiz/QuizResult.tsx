@@ -108,7 +108,7 @@ export function QuizResult({
         <div className="quiz-result-actions">
           <button
             type="button"
-            className="quiz-submit-btn"
+            className="quiz-submit-btn quiz-btn-secondary"
             onClick={onViewLeaderboard}
           >
             View Leaderboard

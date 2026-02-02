@@ -942,7 +942,7 @@ export function QuizModal({
 
   return (
     <div className="quiz-modal-backdrop" onClick={handleBackdropClick}>
-      <div className="quiz-modal-panel">
+      <div className="quiz-modal-panel quiz-ui">
         <header className="quiz-modal-header">
           <div className="quiz-modal-tabs">
             <button
@@ -978,9 +978,23 @@ export function QuizModal({
               </>
             )}
           </div>
-          <button className="quiz-modal-close" onClick={handleClose}>
-            ✕
-          </button>
+          <div className="quiz-modal-header-actions">
+            {activeTab === "quiz" && mode === "daily" && (
+              <span className="quiz-modal-timer nums">
+                {(() => {
+                  const totalSeconds = Math.floor(quiz.elapsedMs / 1000);
+                  const minutes = Math.floor(totalSeconds / 60);
+                  const seconds = totalSeconds % 60;
+                  return `${minutes.toString().padStart(2, "0")}:${seconds
+                    .toString()
+                    .padStart(2, "0")}`;
+                })()}
+              </span>
+            )}
+            <button className="quiz-modal-close" onClick={handleClose}>
+              ✕
+            </button>
+          </div>
         </header>
 
         <div className="quiz-modal-body">
@@ -989,7 +1003,7 @@ export function QuizModal({
             <div className="quiz-admin-panel">
               <div className="quiz-admin-row">
                 <button
-                  className="quiz-submit-btn quiz-admin-btn"
+                  className="quiz-submit-btn quiz-admin-btn quiz-btn-secondary"
                   onClick={handleLoadDaily}
                 >
                   Load Daily Quiz
@@ -1054,7 +1068,12 @@ export function QuizModal({
                   <span>Tags</span>
                 </div>
                 {orderedQuestions.map((question) => (
-                  <div className="quiz-admin-table-row" key={question.id}>
+                  <div
+                    className={`quiz-admin-table-row ${
+                      editorState?.id === question.id ? "is-active" : ""
+                    }`}
+                    key={question.id}
+                  >
                     <span>{question.id}</span>
                     <span>{question.type}</span>
                     <span>{question.difficulty}</span>
@@ -1243,7 +1262,7 @@ export function QuizModal({
                       <div className="quiz-admin-row quiz-admin-actions">
                         <button
                           type="button"
-                          className="quiz-submit-btn quiz-admin-btn"
+                          className="quiz-submit-btn quiz-admin-btn quiz-btn-secondary"
                           onClick={closeEditor}
                         >
                           Cancel
@@ -1303,11 +1322,18 @@ export function QuizModal({
                     ? adminQuestions.find((q) => q.id === entry.questionId)
                     : null;
                   return (
-                    <div className="quiz-admin-table-row" key={date}>
+                    <div
+                      className={`quiz-admin-table-row ${
+                        assignDate === date ? "is-active" : ""
+                      }`}
+                      key={date}
+                    >
                       <span>{date}</span>
                       <span>{getDayOfWeek(date)}</span>
                       <span>{entry?.questionId ?? "-"}</span>
-                      <span>
+                      <span
+                        className={question ? undefined : "quiz-admin-muted"}
+                      >
                         {question
                           ? `${entry?.questionId} — ${getPromptPreview(question.prompt)}`
                           : "No question selected"}
@@ -1346,7 +1372,7 @@ export function QuizModal({
                             </button>
                             <button
                               type="button"
-                              className="quiz-submit-btn quiz-admin-btn"
+                              className="quiz-submit-btn quiz-admin-btn quiz-btn-secondary"
                               onClick={closeAssign}
                             >
                               Cancel

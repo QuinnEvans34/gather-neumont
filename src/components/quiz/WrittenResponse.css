@@ -8,8 +8,8 @@
 .written-response-input {
   width: 100%;
   padding: 16px 18px;
-  background: #1c1c1c;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--surface, #1c1c1c);
+  border: none;
   border-radius: 10px;
   color: #e0e0e0;
   font-size: 16px;
@@ -18,8 +18,12 @@
   transition: all 0.15s ease;
 }
 
+.written-response-input:hover:not(:disabled) {
+  box-shadow: 0 0 0 1px var(--outline-hover, rgba(233, 69, 96, 0.35));
+}
+
 .written-response-input:focus {
-  border-color: rgba(233, 69, 96, 0.5);
+  box-shadow: 0 0 0 2px var(--focus, rgba(233, 69, 96, 0.55));
 }
 
 .written-response-input::placeholder {
@@ -27,8 +31,8 @@
 }
 
 .written-response-input.incorrect {
-  border-color: rgba(233, 69, 96, 0.8);
-  background: rgba(233, 69, 96, 0.1);
+  box-shadow: 0 0 0 2px var(--danger, #e55a6a);
+  background: rgba(229, 90, 106, 0.12);
 }
 
 .written-response-input.shake {
