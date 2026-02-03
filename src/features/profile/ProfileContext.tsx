@@ -1,28 +1,40 @@
 import React, { createContext, useContext, useMemo, useRef, useState } from "react";
 import type { ProfileDraft } from "./profileTypes";
 import type { OnboardingProgress, OnboardingStep } from "./onboardingState";
-import { isOnboardingComplete } from "./onboardingState";
-import { profileStorage, shouldResetOnboardingOnLoad } from "./profileStorage";
-import type { MajorId } from "../../config/majors";
+import { isProfileInfoValid } from "./onboardingState";
+import { profileStorage } from "./profileStorage";
+import { DICEBEAR_STYLES, type DicebearStyleId } from "../../avatars/dicebear_registry";
+import { randomSeed } from "../../utils/random";
 
-const DEFAULT_SPRITES = ["sprite_1", "sprite_2", "sprite_3"] as const;
+function firstDicebearStyleId(): DicebearStyleId {
+  const first = Object.keys(DICEBEAR_STYLES)[0] as DicebearStyleId | undefined;
+  // If the registry is empty, we still need a deterministic value for runtime;
+  // this should be prevented by keeping at least one style in the registry.
+  return first ?? ("pixelArt" as DicebearStyleId);
+}
 
-function pickRandomSpriteId(): string {
-  const idx = Math.floor(Math.random() * DEFAULT_SPRITES.length);
-  return DEFAULT_SPRITES[idx] ?? DEFAULT_SPRITES[0];
+function isDicebearStyleId(value: unknown): value is DicebearStyleId {
+  return typeof value === "string" && Object.prototype.hasOwnProperty.call(DICEBEAR_STYLES, value);
 }
 
 function normalizeDraft(input: Partial<ProfileDraft> | undefined): ProfileDraft {
-  const intendedMajorId = (input?.intendedMajorId ?? "UNDECIDED") as MajorId;
+  const rawAvatar = (input as any)?.avatar as any;
+  const style = isDicebearStyleId(rawAvatar?.style) ? rawAvatar.style : firstDicebearStyleId();
+  const seed =
+    typeof rawAvatar?.seed === "string" && rawAvatar.seed.trim().length > 0
+      ? rawAvatar.seed
+      : randomSeed();
 
   return {
     displayName: input?.displayName ?? "",
     email: input?.email,
     location: input?.location ?? "",
     avatar: {
-      spriteId: input?.avatar?.spriteId ?? pickRandomSpriteId(),
+      provider: "dicebear",
+      style,
+      seed,
     },
-    intendedMajorId,
+    intendedMajorId: input?.intendedMajorId ?? "UNDECIDED",
   };
 }
 
@@ -32,11 +44,51 @@ function normalizeProgress(
   return { step: input?.step ?? "profile" };
 }
 
+function hasProfileBasics(draft: ProfileDraft): boolean {
+  return isProfileInfoValid(draft);
+}
+
+function hasAvatar(draft: ProfileDraft): boolean {
+  return (
+    draft.avatar.provider === "dicebear" &&
+    isDicebearStyleId(draft.avatar.style) &&
+    typeof draft.avatar.seed === "string" &&
+    draft.avatar.seed.trim().length > 0
+  );
+}
+
+function hasMajor(draft: ProfileDraft): boolean {
+  // Treat "UNDECIDED" as a valid selection for completeness.
+  return typeof (draft as any).intendedMajorId === "string" && draft.intendedMajorId.length > 0;
+}
+
+function isOnboardingCompleteDerived(draft: ProfileDraft): boolean {
+  return hasProfileBasics(draft) && hasAvatar(draft) && hasMajor(draft);
+}
+
+function deriveStep(draft: ProfileDraft): OnboardingStep {
+  if (!hasProfileBasics(draft)) return "profile";
+  if (!hasAvatar(draft)) return "avatar";
+  if (!hasMajor(draft)) return "major";
+  return "done";
+}
+
 export type ProfileContextValue = {
   profileDraft: ProfileDraft;
-  setProfileDraft: (partial: Partial<ProfileDraft>) => void;
+  setProfileDraft: (
+    partial: Partial<Omit<ProfileDraft, "avatar">> & {
+      avatar?: { provider?: "dicebear"; style?: DicebearStyleId | string; seed?: string };
+    },
+  ) => void;
   resetProfile: () => void;
 
+  // Derived gating helpers (do not depend on a mutable stored step).
+  hasProfileBasics: () => boolean;
+  hasAvatar: () => boolean;
+  hasMajor: () => boolean;
+  isOnboardingComplete: () => boolean;
+
+  // Kept for backward-compat with earlier prompts; not used for gating.
   onboardingProgress: OnboardingProgress;
   setStep: (step: OnboardingStep) => void;
   isComplete: () => boolean;
@@ -53,7 +105,36 @@ export function ProfileProvider(props: { children: React.ReactNode }) {
         ? window.location.pathname
         : "/";
 
-    if (shouldResetOnboardingOnLoad(pathname, stored.onboardingProgress)) {
+    const rawDraft = stored.profileDraft as any;
+    const storedBasics =
+      rawDraft &&
+      typeof rawDraft.displayName === "string" &&
+      typeof rawDraft.location === "string" &&
+      isProfileInfoValid({ displayName: rawDraft.displayName, location: rawDraft.location });
+    const storedAvatar =
+      rawDraft?.avatar?.provider === "dicebear" &&
+      typeof rawDraft.avatar?.style === "string" &&
+      typeof rawDraft.avatar?.seed === "string" &&
+      rawDraft.avatar.seed.trim().length > 0;
+    // Treat "UNDECIDED" as selected for completeness.
+    const storedMajor = typeof rawDraft?.intendedMajorId === "string" && rawDraft.intendedMajorId.length > 0;
+    const storedComplete = storedBasics && storedAvatar && storedMajor;
+
+    // Reset drafts on refresh for onboarding/login routes, but allow deep-link refresh
+    // when prerequisites for that route already exist.
+    const isLoginRoute = pathname === "/login";
+    const isOnboardingRoute = pathname.startsWith("/onboarding");
+    const isAvatarRoute = pathname === "/onboarding/avatar";
+    const isMajorRoute = pathname === "/onboarding/major";
+
+    const allowContinueFromStorage =
+      storedComplete ||
+      (isAvatarRoute && storedBasics) ||
+      (isMajorRoute && storedBasics && storedAvatar);
+
+    const shouldReset = (isLoginRoute || isOnboardingRoute) && !allowContinueFromStorage;
+
+    if (shouldReset) {
       profileStorage.clear();
       stored = profileStorage.load();
     }
@@ -75,19 +156,32 @@ export function ProfileProvider(props: { children: React.ReactNode }) {
     });
 
   const value = useMemo<ProfileContextValue>(() => {
+    const derivedProgress: OnboardingProgress = { step: deriveStep(profileDraft) };
+
     return {
       profileDraft,
       setProfileDraft(partial) {
         setProfileDraftState((prev) => {
+          const nextStyle =
+            partial.avatar && "style" in partial.avatar
+              ? isDicebearStyleId(partial.avatar.style)
+                ? partial.avatar.style
+                : firstDicebearStyleId()
+              : prev.avatar.style;
+
+          const nextSeed =
+            partial.avatar && "seed" in partial.avatar
+              ? typeof partial.avatar.seed === "string" && partial.avatar.seed.trim().length > 0
+                ? partial.avatar.seed
+                : randomSeed()
+              : prev.avatar.seed;
+
           const next: ProfileDraft = {
             ...prev,
             ...partial,
-            avatar: partial.avatar ? { ...prev.avatar, ...partial.avatar } : prev.avatar,
+            avatar: { provider: "dicebear", style: nextStyle, seed: nextSeed },
           };
-          // Ensure a usable avatar at all times.
-          if (!next.avatar?.spriteId) {
-            next.avatar = { spriteId: pickRandomSpriteId() };
-          }
+
           profileStorage.saveProfileDraft(next);
           return next;
         });
@@ -102,7 +196,20 @@ export function ProfileProvider(props: { children: React.ReactNode }) {
         profileStorage.saveOnboardingProgress(progress);
       },
 
-      onboardingProgress,
+      hasProfileBasics() {
+        return hasProfileBasics(profileDraft);
+      },
+      hasAvatar() {
+        return hasAvatar(profileDraft);
+      },
+      hasMajor() {
+        return hasMajor(profileDraft);
+      },
+      isOnboardingComplete() {
+        return isOnboardingCompleteDerived(profileDraft);
+      },
+
+      onboardingProgress: derivedProgress,
       setStep(step) {
         setOnboardingProgressState(() => {
           const next: OnboardingProgress = { step };
@@ -111,10 +218,10 @@ export function ProfileProvider(props: { children: React.ReactNode }) {
         });
       },
       isComplete() {
-        return isOnboardingComplete(onboardingProgress);
+        return isOnboardingCompleteDerived(profileDraft);
       },
     };
-  }, [onboardingProgress, profileDraft]);
+  }, [profileDraft]);
 
   return <ProfileContext.Provider value={value}>{props.children}</ProfileContext.Provider>;
 }

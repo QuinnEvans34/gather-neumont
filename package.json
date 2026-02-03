@@ -9,6 +9,8 @@
     "start": "NODE_ENV=production bun src/index.ts"
   },
   "dependencies": {
+    "@dicebear/collection": "^9.3.0",
+    "@dicebear/core": "^9.3.1",
     "phaser": "^3.90.0",
     "react": "^19",
     "react-dom": "^19",
