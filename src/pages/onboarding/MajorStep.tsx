@@ -7,6 +7,7 @@ export default function MajorStep() {
   const navigate = useNavigate();
 
   const selected = profile.profileDraft.intendedMajorId;
+  const canFinish = profile.hasProfileBasics() && profile.hasAvatar() && profile.hasMajor();
 
   return (
     <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
@@ -56,18 +57,29 @@ export default function MajorStep() {
 
         <button
           onClick={() => {
-            profile.setStep("done");
+            if (!profile.hasProfileBasics()) {
+              navigate("/onboarding/profile");
+              return;
+            }
+            if (!profile.hasAvatar()) {
+              navigate("/onboarding/avatar");
+              return;
+            }
+            if (!profile.hasMajor()) {
+              return;
+            }
             navigate("/");
           }}
+          disabled={!canFinish}
           style={{
             marginTop: 16,
             width: "100%",
             padding: "10px 12px",
             borderRadius: 10,
             border: "1px solid rgba(255, 255, 255, 0.18)",
-            background: "rgba(255, 255, 255, 0.12)",
+            background: canFinish ? "rgba(255, 255, 255, 0.12)" : "rgba(255, 255, 255, 0.06)",
             color: "inherit",
-            cursor: "pointer",
+            cursor: canFinish ? "pointer" : "not-allowed",
           }}
         >
           Finish
@@ -76,4 +88,3 @@ export default function MajorStep() {
     </div>
   );
 }
-

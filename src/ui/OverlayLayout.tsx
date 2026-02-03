@@ -1,40 +1,17 @@
-import { useEffect, useMemo, useRef } from "react";
-import { useLocation, useOutlet } from "react-router-dom";
+import { useEffect, useRef } from "react";
+import { useOutlet } from "react-router-dom";
 import GamePage from "../Game.tsx";
-import LoginPage from "../pages/LoginPage";
-import OnboardingLanding from "../pages/onboarding/Landing";
-import ProfileStep from "../pages/onboarding/ProfileStep";
-import AvatarStep from "../pages/onboarding/AvatarStep";
-import MajorStep from "../pages/onboarding/MajorStep";
 
 export default function OverlayLayout() {
   const outlet = useOutlet();
-  const location = useLocation();
   const isOverlayVisible = outlet != null;
   const overlayRootRef = useRef<HTMLDivElement | null>(null);
-
-  const overlayUi = useMemo(() => {
-    switch (location.pathname) {
-      case "/login":
-        return <LoginPage />;
-      case "/onboarding":
-        return <OnboardingLanding />;
-      case "/onboarding/profile":
-        return <ProfileStep />;
-      case "/onboarding/avatar":
-        return <AvatarStep />;
-      case "/onboarding/major":
-        return <MajorStep />;
-      default:
-        return null;
-    }
-  }, [location.pathname]);
 
   useEffect(() => {
     if (!isOverlayVisible) return;
     // Ensure key events are captured even when no input is focused.
     overlayRootRef.current?.focus();
-  }, [isOverlayVisible, location.pathname]);
+  }, [isOverlayVisible, outlet]);
 
   function stopKeys(e: React.KeyboardEvent) {
     // Always stop propagation so Phaser key listeners don't run.
@@ -76,15 +53,7 @@ export default function OverlayLayout() {
             outline: "none",
           }}
         >
-          {overlayUi ? (
-            <>
-              {/* Render route elements (incl. guards) but keep them out of view. */}
-              <div style={{ display: "none" }}>{outlet}</div>
-              {overlayUi}
-            </>
-          ) : (
-            outlet
-          )}
+          {outlet}
         </div>
       ) : null}
     </div>
