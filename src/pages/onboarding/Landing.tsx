@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { NEUMONT_LOGO } from "../../config/assets";
 import { useAuth } from "../../features/auth/AuthContext";
 import { useProfile } from "../../features/profile/ProfileContext";
-import "../../styles/auth-onboarding.css";
 
 export default function OnboardingLanding() {
   const auth = useAuth();
@@ -10,34 +9,34 @@ export default function OnboardingLanding() {
   const navigate = useNavigate();
 
   return (
-    <div className="onboarding-overlay">
-      <div className="onboarding-container">
-        <div className="logo-display">
+    <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
+      <div style={{ maxWidth: 520, padding: 24 }}>
+        <div style={{ display: "flex", justifyContent: "center" }}>
           <img
             src={NEUMONT_LOGO}
             alt="Neumont logo"
-            className="logo-image"
+            style={{ height: 56, width: "auto", display: "block" }}
           />
         </div>
 
-        <h1 className="onboarding-heading">Welcome to Gather</h1>
-        <p className="onboarding-description">
-          Complete your profile in three quick steps: profile info, avatar, and major selection.
+        <h1 style={{ marginTop: 16 }}>Welcome</h1>
+        <p style={{ marginTop: 8, opacity: 0.9 }}>
+          Get set up in a few quick steps: profile, avatar, major.
         </p>
 
-        <div className="button-group" style={{ marginTop: 20 }}>
+        <div style={{ marginTop: 16, display: "grid", gap: 10 }}>
           <button
-            onClick={() => navigate("/sign-in")}
-            className="btn btn-primary"
+            onClick={() => navigate("/login")}
+            style={{
+              padding: "10px 12px",
+              borderRadius: 10,
+              border: "1px solid rgba(255, 255, 255, 0.18)",
+              background: "rgba(255, 255, 255, 0.12)",
+              color: "inherit",
+              cursor: "pointer",
+            }}
           >
-            Sign in
-          </button>
-
-          <button
-            onClick={() => navigate("/create-account")}
-            className="btn btn-secondary"
-          >
-            Create account
+            Login
           </button>
 
           <button
@@ -46,16 +45,24 @@ export default function OnboardingLanding() {
               profile.resetProfile();
               navigate("/onboarding/profile");
             }}
-            className="btn btn-ghost"
+            style={{
+              padding: "10px 12px",
+              borderRadius: 10,
+              border: "1px solid rgba(255, 255, 255, 0.18)",
+              background: "rgba(255, 255, 255, 0.06)",
+              color: "inherit",
+              cursor: "pointer",
+            }}
           >
-            Continue as guest
+            Continue as Guest
           </button>
         </div>
 
-        <div className="auth-mode-indicator">
-          Current mode: <span className="auth-mode-value">{auth.mode}</span>
-        </div>
+        <p style={{ marginTop: 12, fontSize: 13, opacity: 0.85 }}>
+          Mode: <strong>{auth.mode}</strong>
+        </p>
       </div>
     </div>
   );
 }
+
