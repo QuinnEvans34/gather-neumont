@@ -21,7 +21,7 @@ function GamePage() {
   }, []);
 
   return (
-    <div className="game-wrapper">
+    <div className="game-wrapper" style={{ position: "fixed", inset: 0 }}>
       <div id="game-container" />
     </div>
   );
