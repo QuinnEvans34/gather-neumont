@@ -1,0 +1,79 @@
+import { useNavigate } from "react-router-dom";
+import { MAJORS } from "../../config/majors";
+import { useProfile } from "../../features/profile/ProfileContext";
+
+export default function MajorStep() {
+  const profile = useProfile();
+  const navigate = useNavigate();
+
+  const selected = profile.profileDraft.intendedMajorId;
+
+  return (
+    <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
+      <div style={{ maxWidth: 520, padding: 24 }}>
+        <h1>Major</h1>
+        <p style={{ marginTop: 8, opacity: 0.9 }}>Pick an intended major (you can change it later).</p>
+
+        <div
+          style={{
+            marginTop: 16,
+            display: "grid",
+            gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+            gap: 12,
+          }}
+        >
+          {MAJORS.map((m) => {
+            const isSelected = m.id === selected;
+            return (
+              <button
+                key={m.id}
+                onClick={() => profile.setProfileDraft({ intendedMajorId: m.id })}
+                style={{
+                  textAlign: "left",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: 12,
+                  borderRadius: 12,
+                  border: isSelected
+                    ? "1px solid rgba(255, 255, 255, 0.35)"
+                    : "1px solid rgba(255, 255, 255, 0.12)",
+                  background: isSelected ? "rgba(255, 255, 255, 0.12)" : "rgba(255, 255, 255, 0.06)",
+                  color: "inherit",
+                  cursor: "pointer",
+                }}
+              >
+                <img
+                  src={m.logoPath}
+                  alt={`${m.label} icon`}
+                  style={{ width: 36, height: 36, display: "block" }}
+                />
+                <div style={{ fontSize: 14, lineHeight: 1.2 }}>{m.label}</div>
+              </button>
+            );
+          })}
+        </div>
+
+        <button
+          onClick={() => {
+            profile.setStep("done");
+            navigate("/");
+          }}
+          style={{
+            marginTop: 16,
+            width: "100%",
+            padding: "10px 12px",
+            borderRadius: 10,
+            border: "1px solid rgba(255, 255, 255, 0.18)",
+            background: "rgba(255, 255, 255, 0.12)",
+            color: "inherit",
+            cursor: "pointer",
+          }}
+        >
+          Finish
+        </button>
+      </div>
+    </div>
+  );
+}
+
