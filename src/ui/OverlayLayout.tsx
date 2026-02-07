@@ -1,12 +1,21 @@
 import { useEffect, useRef } from "react";
-import { useOutlet } from "react-router-dom";
+import { useLocation, useOutlet } from "react-router-dom";
 import GamePage from "../Game.tsx";
 import { useAuth } from "../features/auth/AuthContext";
+import ProfileHUD from "./profile/ProfileHUD";
 
 export default function OverlayLayout() {
   const auth = useAuth();
+  const location = useLocation();
   const outlet = useOutlet();
-  const isOverlayVisible = outlet != null;
+  const pathname = location.pathname;
+  const isOverlayVisible =
+    pathname === "/sign-in" ||
+    pathname === "/create-account" ||
+    pathname === "/login" ||
+    pathname === "/admin" ||
+    pathname === "/onboarding" ||
+    pathname.startsWith("/onboarding/");
   const overlayRootRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -39,6 +48,8 @@ export default function OverlayLayout() {
   return (
     <div style={{ width: "100%", height: "100%" }}>
       <GamePage />
+
+      {!isOverlayVisible ? <ProfileHUD /> : null}
 
       {auth.mode === "guest" ? (
         <div
