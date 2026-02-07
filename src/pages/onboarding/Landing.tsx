@@ -26,7 +26,7 @@ export default function OnboardingLanding() {
 
         <div style={{ marginTop: 16, display: "grid", gap: 10 }}>
           <button
-            onClick={() => navigate("/login")}
+            onClick={() => navigate("/sign-in")}
             style={{
               padding: "10px 12px",
               borderRadius: 10,
@@ -37,6 +37,20 @@ export default function OnboardingLanding() {
             }}
           >
             Sign in
+          </button>
+
+          <button
+            onClick={() => navigate("/create-account")}
+            style={{
+              padding: "10px 12px",
+              borderRadius: 10,
+              border: "1px solid rgba(255, 255, 255, 0.18)",
+              background: "rgba(255, 255, 255, 0.12)",
+              color: "inherit",
+              cursor: "pointer",
+            }}
+          >
+            Create account
           </button>
 
           <button

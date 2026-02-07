@@ -22,5 +22,16 @@
       "seed": "da58ffe2-220c-47df-9995-d066eb1fcdb3"
     },
     "updatedAt": "2026-02-07T19:13:07.506Z"
+  },
+  "qevan": {
+    "displayName": "quinn",
+    "location": "sale lake city",
+    "intendedMajorId": "BSCS",
+    "avatar": {
+      "provider": "dicebear",
+      "style": "pixelArt",
+      "seed": "81e8ac3f-cd30-4f32-9100-16f0d3867c78"
+    },
+    "updatedAt": "2026-02-07T19:38:03.232Z"
   }
 }

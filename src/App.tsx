@@ -2,11 +2,14 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import QuizDevPage from "./pages/QuizDevPage.tsx";
 import OverlayLayout from "./ui/OverlayLayout.tsx";
 import { useAuth } from "./features/auth/AuthContext.tsx";
+import { Navigate } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import OnboardingLanding from "./pages/onboarding/Landing";
 import ProfileStep from "./pages/onboarding/ProfileStep";
 import AvatarStep from "./pages/onboarding/AvatarStep";
 import MajorStep from "./pages/onboarding/MajorStep";
+import SignInPage from "./pages/SignInPage";
+import CreateAccountPage from "./pages/CreateAccountPage";
 
 import "./index.css";
 
@@ -29,7 +32,9 @@ export function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<OverlayLayout />}>
-          <Route path="login" element={<LoginPage />} />
+          <Route path="login" element={<Navigate to="/sign-in" replace />} />
+          <Route path="sign-in" element={<SignInPage />} />
+          <Route path="create-account" element={<CreateAccountPage />} />
 
           <Route path="onboarding">
             <Route index element={<OnboardingLanding />} />
