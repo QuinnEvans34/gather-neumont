@@ -1,16 +1,13 @@
 import { createAvatar } from "@dicebear/core";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { MAJORS } from "../../config/majors";
 import { DICEBEAR_STYLES } from "../../avatars/dicebear_registry";
 import { useAuth } from "../../features/auth/AuthContext";
 import { useProfile } from "../../features/profile/ProfileContext";
-import "../../styles/auth-onboarding.css";
 
 export default function ProfileHUD() {
   const auth = useAuth();
   const profile = useProfile();
-  const navigate = useNavigate();
 
   const username = auth.me?.username?.trim() ? auth.me.username : "Guest";
   const draft = profile.profileDraft;
@@ -37,18 +34,6 @@ export default function ProfileHUD() {
       return null;
     }
   }, [draft.avatar]);
-
-  const handleEditAccount = () => {
-    setOpen(false);
-    console.log("Navigate to /account");
-    navigate("/account");
-  };
-
-  const handleLogout = async () => {
-    setOpen(false);
-    await auth.logout();
-    navigate("/onboarding");
-  };
 
   useEffect(() => {
     if (!open) return;
@@ -80,82 +65,125 @@ export default function ProfileHUD() {
   }, [open]);
 
   return (
-    <div ref={containerRef} className="profile-hud">
+    <div
+      ref={containerRef}
+      style={{
+        position: "fixed",
+        top: 12,
+        right: 12,
+        zIndex: 60,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "flex-end",
+        gap: 8,
+        color: "rgba(255, 255, 255, 0.92)",
+        fontFamily:
+          "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji",
+      }}
+    >
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="dialog"
         aria-expanded={open}
-        className="profile-hud-toggle"
+        style={{
+          cursor: "pointer",
+          border: "1px solid rgba(255, 255, 255, 0.18)",
+          background: "rgba(0, 0, 0, 0.45)",
+          backdropFilter: "blur(6px)",
+          color: "rgba(255, 255, 255, 0.92)",
+          fontFamily: "inherit",
+          borderRadius: 999,
+          padding: "8px 12px",
+          display: "grid",
+          gap: 2,
+          textAlign: "left",
+          boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
+        }}
       >
-        <div className="profile-hud-toggle-label">Profile</div>
-        <div className="profile-hud-toggle-name">{username}</div>
+        <div style={{ fontSize: 12, lineHeight: 1.1, opacity: 0.85 }}>Profile</div>
+        <div style={{ fontSize: 13, lineHeight: 1.15, fontWeight: 600 }}>{username}</div>
       </button>
 
-      {open && (
+      {open ? (
         <div
           ref={popoverRef}
           tabIndex={-1}
           role="dialog"
           aria-label="Profile details"
-          className="profile-hud-popover"
+          style={{
+            width: 320,
+            maxWidth: "calc(100vw - 24px)",
+            borderRadius: 14,
+            border: "1px solid rgba(255, 255, 255, 0.18)",
+            background: "rgba(15, 15, 18, 0.92)",
+            backdropFilter: "blur(10px)",
+            boxShadow: "0 18px 60px rgba(0,0,0,0.45)",
+            padding: 12,
+            outline: "none",
+          }}
         >
-          <div className="profile-hud-header">
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
             <div
               aria-hidden="true"
-              className="profile-hud-avatar"
+              style={{
+                width: 48,
+                height: 48,
+                borderRadius: 12,
+                overflow: "hidden",
+                border: "1px solid rgba(255, 255, 255, 0.14)",
+                background: "rgba(255,255,255,0.06)",
+                flex: "0 0 auto",
+                display: "grid",
+                placeItems: "center",
+              }}
               dangerouslySetInnerHTML={avatarSvg ? { __html: avatarSvg } : undefined}
             />
 
-            <div className="profile-hud-user-info">
-              <div className="profile-hud-display-name">
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.15 }}>
                 {draft.displayName?.trim() ? draft.displayName : "—"}
               </div>
-              <div className="profile-hud-username">@{username}</div>
+              <div style={{ fontSize: 12, opacity: 0.85, marginTop: 3, lineHeight: 1.15 }}>
+                @{username}
+              </div>
             </div>
           </div>
 
-          <div className="profile-hud-details">
+          <div style={{ marginTop: 12, display: "grid", gap: 8, fontSize: 12, lineHeight: 1.25 }}>
             <Row label="Username" value={username} />
-            <Row label="Major" value={majorLabel || "—"} />
-          </div>
+            <Row
+              label="Location"
+              value={draft.location?.trim() ? draft.location : "—"}
+            />
+            <Row label="Intended Major" value={majorLabel || "—"} />
 
-          <div className="profile-hud-actions">
-            <button
-              type="button"
-              onClick={handleEditAccount}
-              className="profile-hud-btn primary"
-            >
-              Edit account
-            </button>
-
-            {(auth.mode === "user" || auth.mode === "admin" || auth.mode === "guest") && (
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="profile-hud-btn"
+            {auth.mode === "guest" ? (
+              <div
+                style={{
+                  marginTop: 4,
+                  paddingTop: 10,
+                  borderTop: "1px solid rgba(255,255,255,0.12)",
+                  opacity: 0.9,
+                }}
               >
-                {auth.mode === "guest" ? "Exit guest mode" : "Log out"}
-              </button>
-            )}
-
-            {auth.mode === "guest" && (
-              <div className="profile-hud-notice">
-                Guest mode — progress not saved
+                Guest — progress not saved
               </div>
-            )}
+            ) : null}
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   );
 }
 
 function Row(props: { label: string; value: string }) {
   return (
-    <div className="profile-hud-row">
-      <div className="profile-hud-row-label">{props.label}</div>
-      <div className="profile-hud-row-value">{props.value}</div>
+    <div style={{ display: "grid", gridTemplateColumns: "110px 1fr", gap: 10 }}>
+      <div style={{ opacity: 0.75 }}>{props.label}</div>
+      <div style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis" }}>
+        {props.value}
+      </div>
     </div>
   );
 }
