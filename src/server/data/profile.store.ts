@@ -63,11 +63,13 @@ function parseStoredRecord(usernameKey: string, value: unknown): ProfileRecord |
 
   const displayName = (value as any).displayName;
   const email = (value as any).email;
+  const location = (value as any).location;
   const intendedMajorId = (value as any).intendedMajorId;
   const avatar = (value as any).avatar;
   const updatedAt = (value as any).updatedAt;
 
   if (typeof displayName !== "string") return null;
+  if (typeof location !== "string") return null;
   if (typeof intendedMajorId !== "string") return null;
   if (!isPlainObject(avatar)) return null;
   if ((avatar as any).provider !== "dicebear") return null;
@@ -78,6 +80,7 @@ function parseStoredRecord(usernameKey: string, value: unknown): ProfileRecord |
   const record: ProfileRecord = {
     username: usernameKey,
     displayName,
+    location,
     intendedMajorId,
     avatar: {
       provider: "dicebear",
@@ -113,6 +116,7 @@ export function upsertByUsername(username: string, profile: ProfileUpsertInput):
     username: key,
     displayName: profile.displayName,
     email: profile.email,
+    location: profile.location,
     intendedMajorId: profile.intendedMajorId,
     avatar: {
       provider: "dicebear",
@@ -126,6 +130,7 @@ export function upsertByUsername(username: string, profile: ProfileUpsertInput):
   map[key] = {
     displayName: record.displayName,
     email: record.email,
+    location: record.location,
     intendedMajorId: record.intendedMajorId,
     avatar: record.avatar,
     updatedAt: record.updatedAt,
@@ -134,3 +139,4 @@ export function upsertByUsername(username: string, profile: ProfileUpsertInput):
 
   return record;
 }
+

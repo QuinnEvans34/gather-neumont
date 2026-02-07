@@ -214,8 +214,6 @@ export function ProfileProvider(props: { children: React.ReactNode }) {
         } catch (err) {
           // Keep onboarding functional even when the server isn't ready (404) or user is not authed (401).
           // Next "commit-like" change will retry.
-          // eslint-disable-next-line no-console
-          console.warn("Profile server save failed:", err);
           break;
         }
       }
@@ -253,28 +251,26 @@ export function ProfileProvider(props: { children: React.ReactNode }) {
         if (!serverProfile) return;
 
         isHydratingFromServerRef.current = true;
-        const next = normalizeDraft({
-          displayName: serverProfile.displayName,
-          email: serverProfile.email,
-          location: serverProfile.location,
-          intendedMajorId: serverProfile.intendedMajorId as any,
-          avatar: {
-            provider: "dicebear",
-            style: serverProfile.avatar?.style,
-            seed: serverProfile.avatar?.seed,
-          } as any,
+        setProfileDraftState((prev) => {
+          const next = normalizeDraft({
+            ...prev,
+            displayName: serverProfile.displayName,
+            email: serverProfile.email,
+            location: serverProfile.location,
+            intendedMajorId: serverProfile.intendedMajorId as any,
+            avatar: serverProfile.avatar ?? prev.avatar,
+          });
+
+          profileStorage.saveProfileDraft(next);
+
+          // This prevents immediately re-sending the same payload back to the server.
+          lastSavedSignatureRef.current = serverSignature(next);
+          return next;
         });
-
-        setProfileDraftState(next);
-        profileStorage.saveProfileDraft(next);
-
-        // This prevents immediately re-sending the same payload back to the server.
-        lastSavedSignatureRef.current = serverSignature(next);
       } catch (err) {
         // If the endpoint doesn't exist yet (404) or any other failure occurs,
         // keep local onboarding functional and treat it as "no server profile".
-        // eslint-disable-next-line no-console
-        console.warn("Profile server load failed:", err);
+        void err;
       } finally {
         isHydratingFromServerRef.current = false;
       }

@@ -35,15 +35,24 @@ export default function ProfileStep() {
       email: nextDraft.email,
     });
 
-    navigate("/onboarding/avatar");
-
     // Guests never call the server. Logged-in users can attempt a save, but it must not block onboarding.
     if (auth.mode === "user" || auth.mode === "admin") {
-      void putProfile(nextDraft).catch((err) => {
-        // eslint-disable-next-line no-console
-        console.warn("Failed to save profile to server:", err);
+      void putProfile({
+        displayName: nextDraft.displayName,
+        email: nextDraft.email,
+        location: nextDraft.location,
+        intendedMajorId: nextDraft.intendedMajorId,
+        avatar: {
+          provider: "dicebear",
+          style: String(nextDraft.avatar.style),
+          seed: String(nextDraft.avatar.seed),
+        },
+      }).catch(() => {
+        // Non-blocking: ignore errors and continue onboarding.
       });
     }
+
+    navigate("/onboarding/avatar");
   }
 
   const inputStyle: CSSProperties = {

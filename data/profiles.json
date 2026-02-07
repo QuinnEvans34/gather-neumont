@@ -1,5 +1,26 @@
 {
-  "version": 1,
-  "profiles": {}
+  "dafsdfa": {
+    "displayName": "asdfasdf",
+    "email": "asdfasdf",
+    "location": "sdfadfas",
+    "intendedMajorId": "BSSE",
+    "avatar": {
+      "provider": "dicebear",
+      "style": "pixelArt",
+      "seed": "b69d7c70-6a29-4e79-8921-9b7802ea9a28"
+    },
+    "updatedAt": "2026-02-07T17:58:09.749Z"
+  },
+  "qevans": {
+    "displayName": "quinn",
+    "email": "asdfasdf",
+    "location": "salt lake",
+    "intendedMajorId": "BSCS",
+    "avatar": {
+      "provider": "dicebear",
+      "style": "pixelArt",
+      "seed": "da58ffe2-220c-47df-9995-d066eb1fcdb3"
+    },
+    "updatedAt": "2026-02-07T19:13:07.506Z"
+  }
 }
-

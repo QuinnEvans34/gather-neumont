@@ -36,7 +36,7 @@ export default function OnboardingLanding() {
               cursor: "pointer",
             }}
           >
-            Login
+            Sign in
           </button>
 
           <button
@@ -54,7 +54,7 @@ export default function OnboardingLanding() {
               cursor: "pointer",
             }}
           >
-            Continue as Guest
+            Continue as guest
           </button>
         </div>
 
@@ -65,4 +65,3 @@ export default function OnboardingLanding() {
     </div>
   );
 }
-

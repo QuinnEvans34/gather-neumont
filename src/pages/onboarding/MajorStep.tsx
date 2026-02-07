@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { putProfile } from "../../api/profileApi";
 import { MAJORS } from "../../config/majors";
@@ -9,7 +8,6 @@ export default function MajorStep() {
   const auth = useAuth();
   const profile = useProfile();
   const navigate = useNavigate();
-  const [isSaving, setIsSaving] = useState(false);
 
   const selected = profile.profileDraft.intendedMajorId;
   const canFinish = profile.hasProfileBasics() && profile.hasAvatar() && profile.hasMajor();
@@ -62,7 +60,6 @@ export default function MajorStep() {
 
         <button
           onClick={async () => {
-            if (isSaving) return;
             if (!profile.hasProfileBasics()) {
               navigate("/onboarding/profile");
               return;
@@ -76,34 +73,40 @@ export default function MajorStep() {
             }
 
             if (auth.mode === "user" || auth.mode === "admin") {
-              try {
-                setIsSaving(true);
-                await putProfile(profile.profileDraft);
-              } catch (err) {
-                // eslint-disable-next-line no-console
-                console.warn("Failed to save profile to server:", err);
-                window.alert("Failed to save your profile. Please try again.");
-                return;
-              } finally {
-                setIsSaving(false);
-              }
+              const nextDraft = { ...profile.profileDraft, intendedMajorId: selected };
+              profile.setProfileDraft({ intendedMajorId: selected });
+              void putProfile({
+                displayName: nextDraft.displayName,
+                email: nextDraft.email,
+                location: nextDraft.location,
+                intendedMajorId: nextDraft.intendedMajorId,
+                avatar: {
+                  provider: "dicebear",
+                  style: String(nextDraft.avatar.style),
+                  seed: String(nextDraft.avatar.seed),
+                },
+              }).catch(() => {
+                // Non-blocking: ignore errors and continue onboarding.
+              });
+            } else {
+              // Still ensure final selection is applied locally for guests.
+              profile.setProfileDraft({ intendedMajorId: selected });
             }
             navigate("/");
           }}
-          disabled={!canFinish || isSaving}
+          disabled={!canFinish}
           style={{
             marginTop: 16,
             width: "100%",
             padding: "10px 12px",
             borderRadius: 10,
             border: "1px solid rgba(255, 255, 255, 0.18)",
-            background:
-              canFinish && !isSaving ? "rgba(255, 255, 255, 0.12)" : "rgba(255, 255, 255, 0.06)",
+            background: canFinish ? "rgba(255, 255, 255, 0.12)" : "rgba(255, 255, 255, 0.06)",
             color: "inherit",
-            cursor: canFinish && !isSaving ? "pointer" : "not-allowed",
+            cursor: canFinish ? "pointer" : "not-allowed",
           }}
         >
-          {isSaving ? "Saving..." : "Finish"}
+          Finish
         </button>
       </div>
     </div>
