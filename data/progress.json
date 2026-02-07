@@ -50,15 +50,15 @@
       "userId": "69cdf4b6-496d-4b8d-aa6f-871eddc51b6c",
       "currentStreak": 1,
       "longestStreak": 1,
-      "totalPoints": 174,
-      "lastCorrectDate": "2026-02-01",
+      "totalPoints": 214,
+      "lastCorrectDate": "2026-02-07",
       "lastCompletion": {
-        "date": "2026-02-01",
-        "questionId": "q001",
-        "attemptsUsed": 1,
-        "pointsEarned": 174,
-        "completedAt": "2026-02-01T21:54:29.615Z",
-        "elapsedMs": 2031
+        "date": "2026-02-07",
+        "questionId": "q002",
+        "attemptsUsed": 3,
+        "pointsEarned": 40,
+        "completedAt": "2026-02-07T21:21:03.573Z",
+        "elapsedMs": 11888
       }
     },
     {

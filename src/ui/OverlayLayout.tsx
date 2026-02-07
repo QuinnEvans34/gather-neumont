@@ -1,13 +1,17 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useOutlet } from "react-router-dom";
 import GamePage from "../Game.tsx";
 import { useAuth } from "../features/auth/AuthContext";
 import ProfileHUD from "./profile/ProfileHUD";
+import { QuizModal } from "../components/quiz/QuizModal";
+import { appEvents } from "../events/appEvents";
+import "../styles/quiz-ui.css";
 
 export default function OverlayLayout() {
   const auth = useAuth();
   const location = useLocation();
   const outlet = useOutlet();
+  const [isDailyQuizOpen, setIsDailyQuizOpen] = useState(false);
   const pathname = location.pathname;
   const isOverlayVisible =
     pathname === "/sign-in" ||
@@ -20,9 +24,22 @@ export default function OverlayLayout() {
 
   useEffect(() => {
     if (!isOverlayVisible) return;
+    if (isDailyQuizOpen) setIsDailyQuizOpen(false);
     // Ensure key events are captured even when no input is focused.
     overlayRootRef.current?.focus();
-  }, [isOverlayVisible, outlet]);
+  }, [isDailyQuizOpen, isOverlayVisible, outlet]);
+
+  useEffect(() => {
+    appEvents.emitDailyQuizOpenChanged(isDailyQuizOpen);
+  }, [isDailyQuizOpen]);
+
+  useEffect(() => {
+    const off = appEvents.onOpenDailyQuiz(() => {
+      if (isOverlayVisible) return;
+      setIsDailyQuizOpen(true);
+    });
+    return off;
+  }, [isOverlayVisible]);
 
   function stopKeys(e: React.KeyboardEvent) {
     // Always stop propagation so Phaser key listeners don't run.
@@ -50,6 +67,15 @@ export default function OverlayLayout() {
       <GamePage />
 
       {!isOverlayVisible ? <ProfileHUD /> : null}
+
+      {!isOverlayVisible ? (
+        <QuizModal
+          isOpen={isDailyQuizOpen}
+          onClose={() => setIsDailyQuizOpen(false)}
+          isAdmin={auth.mode === "admin"}
+          initialTab="quiz"
+        />
+      ) : null}
 
       {auth.mode === "guest" ? (
         <div
