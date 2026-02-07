@@ -1,8 +1,7 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import QuizDevPage from "./pages/QuizDevPage.tsx";
 import OverlayLayout from "./ui/OverlayLayout.tsx";
 import { useAuth } from "./features/auth/AuthContext.tsx";
-import { Navigate } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import OnboardingLanding from "./pages/onboarding/Landing";
 import ProfileStep from "./pages/onboarding/ProfileStep";
@@ -12,6 +11,21 @@ import SignInPage from "./pages/SignInPage";
 import CreateAccountPage from "./pages/CreateAccountPage";
 
 import "./index.css";
+
+function OnboardingGuard() {
+  const auth = useAuth();
+
+  if ((auth.mode === "user" || auth.mode === "admin") && auth.profileComplete === false) {
+    return <Navigate to="/onboarding/profile" replace />;
+  }
+
+  return <Outlet />;
+}
+
+function GameIndex() {
+  // OverlayLayout always renders the game background; this just represents the "/" child route.
+  return null;
+}
 
 function AdminPage() {
   const auth = useAuth();
@@ -43,8 +57,11 @@ export function App() {
             <Route path="major" element={<MajorStep />} />
           </Route>
 
-          <Route path="admin" element={<AdminPage />} />
-          <Route path="dev/quiz" element={<QuizDevPage />} />
+          <Route element={<OnboardingGuard />}>
+            <Route index element={<GameIndex />} />
+            <Route path="admin" element={<AdminPage />} />
+            <Route path="dev/quiz" element={<QuizDevPage />} />
+          </Route>
         </Route>
       </Routes>
     </BrowserRouter>
