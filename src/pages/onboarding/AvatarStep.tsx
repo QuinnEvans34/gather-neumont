@@ -1,4 +1,7 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { putProfile } from "../../api/profileApi";
+import { useAuth } from "../../features/auth/AuthContext";
 import { useProfile } from "../../features/profile/ProfileContext";
 import { createAvatar } from "@dicebear/core";
 import { DICEBEAR_STYLE_LABELS, DICEBEAR_STYLES, type DicebearStyleId } from "../../avatars/dicebear_registry";
@@ -20,8 +23,10 @@ function nextStyle(current: DicebearStyleId): DicebearStyleId {
 }
 
 export default function AvatarStep() {
+  const auth = useAuth();
   const profile = useProfile();
   const navigate = useNavigate();
+  const [isSaving, setIsSaving] = useState(false);
 
   const style = profile.profileDraft.avatar.style ?? firstStyle();
   const seed = profile.profileDraft.avatar.seed;
@@ -81,7 +86,8 @@ export default function AvatarStep() {
           </button>
 
           <button
-            onClick={() => {
+            onClick={async () => {
+              if (isSaving) return;
               if (!profile.hasProfileBasics()) {
                 navigate("/onboarding/profile");
                 return;
@@ -89,18 +95,37 @@ export default function AvatarStep() {
               if (!profile.hasAvatar()) {
                 return;
               }
+
+              if (auth.mode === "user" || auth.mode === "admin") {
+                try {
+                  setIsSaving(true);
+                  await putProfile({
+                    ...profile.profileDraft,
+                    avatar: { provider: "dicebear", style, seed },
+                  });
+                } catch (err) {
+                  // eslint-disable-next-line no-console
+                  console.warn("Failed to save avatar to server:", err);
+                  window.alert("Failed to save your avatar. Please try again.");
+                  return;
+                } finally {
+                  setIsSaving(false);
+                }
+              }
+
               navigate("/onboarding/major");
             }}
+            disabled={isSaving}
             style={{
               padding: "10px 12px",
               borderRadius: 10,
               border: "1px solid rgba(255, 255, 255, 0.12)",
               background: "rgba(255, 255, 255, 0.12)",
               color: "inherit",
-              cursor: "pointer",
+              cursor: isSaving ? "not-allowed" : "pointer",
             }}
           >
-            Continue
+            {isSaving ? "Saving..." : "Continue"}
           </button>
         </div>
       </div>

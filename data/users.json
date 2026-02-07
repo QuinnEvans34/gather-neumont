@@ -90,6 +90,12 @@
       "username": "asdfsadf",
       "isAdmin": false,
       "createdAt": "2026-02-03T16:51:13.704Z"
+    },
+    {
+      "id": "8dfdd984-97b9-4bb1-b6bd-20e8bd9a35d4",
+      "username": "asdfasdf",
+      "isAdmin": false,
+      "createdAt": "2026-02-07T17:08:40.644Z"
     }
   ]
 }
