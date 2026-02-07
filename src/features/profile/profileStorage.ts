@@ -47,6 +47,14 @@ export const profileStorage = {
     };
   },
 
+  loadDraft(): ProfileDraft | undefined {
+    return readJson<ProfileDraft>(PROFILE_DRAFT_KEY);
+  },
+
+  loadProgress(): OnboardingProgress | undefined {
+    return readJson<OnboardingProgress>(ONBOARDING_PROGRESS_KEY);
+  },
+
   saveProfileDraft(draft: ProfileDraft): void {
     writeJson(PROFILE_DRAFT_KEY, draft);
   },

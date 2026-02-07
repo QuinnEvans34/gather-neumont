@@ -1,10 +1,15 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { putProfile } from "../../api/profileApi";
 import { MAJORS } from "../../config/majors";
+import { useAuth } from "../../features/auth/AuthContext";
 import { useProfile } from "../../features/profile/ProfileContext";
 
 export default function MajorStep() {
+  const auth = useAuth();
   const profile = useProfile();
   const navigate = useNavigate();
+  const [isSaving, setIsSaving] = useState(false);
 
   const selected = profile.profileDraft.intendedMajorId;
   const canFinish = profile.hasProfileBasics() && profile.hasAvatar() && profile.hasMajor();
@@ -56,7 +61,8 @@ export default function MajorStep() {
         </div>
 
         <button
-          onClick={() => {
+          onClick={async () => {
+            if (isSaving) return;
             if (!profile.hasProfileBasics()) {
               navigate("/onboarding/profile");
               return;
@@ -68,21 +74,36 @@ export default function MajorStep() {
             if (!profile.hasMajor()) {
               return;
             }
+
+            if (auth.mode === "user" || auth.mode === "admin") {
+              try {
+                setIsSaving(true);
+                await putProfile(profile.profileDraft);
+              } catch (err) {
+                // eslint-disable-next-line no-console
+                console.warn("Failed to save profile to server:", err);
+                window.alert("Failed to save your profile. Please try again.");
+                return;
+              } finally {
+                setIsSaving(false);
+              }
+            }
             navigate("/");
           }}
-          disabled={!canFinish}
+          disabled={!canFinish || isSaving}
           style={{
             marginTop: 16,
             width: "100%",
             padding: "10px 12px",
             borderRadius: 10,
             border: "1px solid rgba(255, 255, 255, 0.18)",
-            background: canFinish ? "rgba(255, 255, 255, 0.12)" : "rgba(255, 255, 255, 0.06)",
+            background:
+              canFinish && !isSaving ? "rgba(255, 255, 255, 0.12)" : "rgba(255, 255, 255, 0.06)",
             color: "inherit",
-            cursor: canFinish ? "pointer" : "not-allowed",
+            cursor: canFinish && !isSaving ? "pointer" : "not-allowed",
           }}
         >
-          Finish
+          {isSaving ? "Saving..." : "Finish"}
         </button>
       </div>
     </div>

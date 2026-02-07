@@ -1,10 +1,12 @@
-import React, { createContext, useContext, useMemo, useRef, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { ProfileDraft } from "./profileTypes";
 import type { OnboardingProgress, OnboardingStep } from "./onboardingState";
 import { isProfileInfoValid } from "./onboardingState";
 import { profileStorage } from "./profileStorage";
 import { DICEBEAR_STYLES, type DicebearStyleId } from "../../avatars/dicebear_registry";
 import { randomSeed } from "../../utils/random";
+import { getProfile, putProfile } from "../../api/profileApi";
+import { useAuth } from "../auth/AuthContext";
 
 function firstDicebearStyleId(): DicebearStyleId {
   const first = Object.keys(DICEBEAR_STYLES)[0] as DicebearStyleId | undefined;
@@ -97,6 +99,8 @@ export type ProfileContextValue = {
 const ProfileContext = createContext<ProfileContextValue | null>(null);
 
 export function ProfileProvider(props: { children: React.ReactNode }) {
+  const auth = useAuth();
+
   const initialStoredRef = useRef<ReturnType<typeof profileStorage.load> | null>(null);
   if (!initialStoredRef.current) {
     let stored = profileStorage.load();
@@ -155,36 +159,161 @@ export function ProfileProvider(props: { children: React.ReactNode }) {
       return next;
     });
 
+  const isHydratingFromServerRef = useRef(false);
+  const hydratedForUsernameRef = useRef<string | null>(null);
+  const saveInFlightRef = useRef(false);
+  const pendingSaveDraftRef = useRef<ProfileDraft | null>(null);
+  const lastSavedSignatureRef = useRef<string | null>(null);
+
+  function serverSignature(draft: ProfileDraft): string {
+    // Deterministic payload used for "did we already save this exact profile?"
+    return JSON.stringify({
+      displayName: draft.displayName,
+      email: draft.email ?? null,
+      location: draft.location,
+      intendedMajorId: draft.intendedMajorId,
+      avatar: {
+        provider: "dicebear",
+        style: draft.avatar.style,
+        seed: draft.avatar.seed,
+      },
+    });
+  }
+
+  function shouldPersistToServer(
+    partial: Partial<Omit<ProfileDraft, "avatar">> & {
+      avatar?: { provider?: "dicebear"; style?: DicebearStyleId | string; seed?: string };
+    },
+  ): boolean {
+    // Avoid spamming on keystroke-style updates; we treat these as "commit-like":
+    // - profile basics saved together (displayName + location)
+    // - avatar randomize/cycle
+    // - intended major selection
+    const touchesAvatar = Boolean(partial.avatar);
+    const touchesMajor = Object.prototype.hasOwnProperty.call(partial as any, "intendedMajorId");
+    const touchesBasics =
+      Object.prototype.hasOwnProperty.call(partial as any, "displayName") &&
+      Object.prototype.hasOwnProperty.call(partial as any, "location");
+    return touchesAvatar || touchesMajor || touchesBasics;
+  }
+
+  async function flushServerSaveQueue(): Promise<void> {
+    if (saveInFlightRef.current) return;
+    saveInFlightRef.current = true;
+    try {
+      while (pendingSaveDraftRef.current) {
+        const draft = pendingSaveDraftRef.current;
+        pendingSaveDraftRef.current = null;
+
+        const sig = serverSignature(draft);
+        if (lastSavedSignatureRef.current === sig) continue;
+
+        try {
+          await putProfile(draft);
+          lastSavedSignatureRef.current = sig;
+        } catch (err) {
+          // Keep onboarding functional even when the server isn't ready (404) or user is not authed (401).
+          // Next "commit-like" change will retry.
+          // eslint-disable-next-line no-console
+          console.warn("Profile server save failed:", err);
+          break;
+        }
+      }
+    } finally {
+      saveInFlightRef.current = false;
+    }
+  }
+
+  function queueServerSave(draft: ProfileDraft): void {
+    if (isHydratingFromServerRef.current) return;
+    if (!(auth.mode === "user" || auth.mode === "admin")) return;
+    if (!auth.me?.username) return;
+
+    const sig = serverSignature(draft);
+    if (lastSavedSignatureRef.current === sig) return;
+
+    pendingSaveDraftRef.current = draft;
+    void flushServerSaveQueue();
+  }
+
+  useEffect(() => {
+    if (!(auth.mode === "user" || auth.mode === "admin")) {
+      hydratedForUsernameRef.current = null;
+      return;
+    }
+    const username = auth.me?.username;
+    if (!username) return;
+
+    if (hydratedForUsernameRef.current === username) return;
+    hydratedForUsernameRef.current = username;
+
+    (async () => {
+      try {
+        const serverProfile = await getProfile();
+        if (!serverProfile) return;
+
+        isHydratingFromServerRef.current = true;
+        const next = normalizeDraft({
+          displayName: serverProfile.displayName,
+          email: serverProfile.email,
+          location: serverProfile.location,
+          intendedMajorId: serverProfile.intendedMajorId as any,
+          avatar: {
+            provider: "dicebear",
+            style: serverProfile.avatar?.style,
+            seed: serverProfile.avatar?.seed,
+          } as any,
+        });
+
+        setProfileDraftState(next);
+        profileStorage.saveProfileDraft(next);
+
+        // This prevents immediately re-sending the same payload back to the server.
+        lastSavedSignatureRef.current = serverSignature(next);
+      } catch (err) {
+        // If the endpoint doesn't exist yet (404) or any other failure occurs,
+        // keep local onboarding functional and treat it as "no server profile".
+        // eslint-disable-next-line no-console
+        console.warn("Profile server load failed:", err);
+      } finally {
+        isHydratingFromServerRef.current = false;
+      }
+    })();
+  }, [auth.me?.username, auth.mode]);
+
   const value = useMemo<ProfileContextValue>(() => {
     const derivedProgress: OnboardingProgress = { step: deriveStep(profileDraft) };
 
     return {
       profileDraft,
       setProfileDraft(partial) {
-        setProfileDraftState((prev) => {
-          const nextStyle =
-            partial.avatar && "style" in partial.avatar
-              ? isDicebearStyleId(partial.avatar.style)
-                ? partial.avatar.style
-                : firstDicebearStyleId()
-              : prev.avatar.style;
+        const prev = profileDraft;
+        const nextStyle =
+          partial.avatar && "style" in partial.avatar
+            ? isDicebearStyleId(partial.avatar.style)
+              ? partial.avatar.style
+              : firstDicebearStyleId()
+            : prev.avatar.style;
 
-          const nextSeed =
-            partial.avatar && "seed" in partial.avatar
-              ? typeof partial.avatar.seed === "string" && partial.avatar.seed.trim().length > 0
-                ? partial.avatar.seed
-                : randomSeed()
-              : prev.avatar.seed;
+        const nextSeed =
+          partial.avatar && "seed" in partial.avatar
+            ? typeof partial.avatar.seed === "string" && partial.avatar.seed.trim().length > 0
+              ? partial.avatar.seed
+              : randomSeed()
+            : prev.avatar.seed;
 
-          const next: ProfileDraft = {
-            ...prev,
-            ...partial,
-            avatar: { provider: "dicebear", style: nextStyle, seed: nextSeed },
-          };
+        const next: ProfileDraft = {
+          ...prev,
+          ...partial,
+          avatar: { provider: "dicebear", style: nextStyle, seed: nextSeed },
+        };
 
-          profileStorage.saveProfileDraft(next);
-          return next;
-        });
+        setProfileDraftState(next);
+        profileStorage.saveProfileDraft(next);
+
+        if (shouldPersistToServer(partial)) {
+          queueServerSave(next);
+        }
       },
       resetProfile() {
         profileStorage.clear();
@@ -221,7 +350,7 @@ export function ProfileProvider(props: { children: React.ReactNode }) {
         return isOnboardingCompleteDerived(profileDraft);
       },
     };
-  }, [profileDraft]);
+  }, [auth.me?.username, auth.mode, profileDraft]);
 
   return <ProfileContext.Provider value={value}>{props.children}</ProfileContext.Provider>;
 }

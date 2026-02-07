@@ -1,17 +1,9 @@
 import { getUserIdFromRequest } from "./auth";
 import { getUserById } from "../data/users.store";
-import { getByUsername, upsertByUsername } from "../data/profile.store";
-import type { ProfileRecord, ProfileUpsertInput } from "../types/profile";
+import { profileStore, type ProfileRecord } from "../data/profiles.store";
+import { MAJORS, type MajorId } from "../../config/majors";
 
-const ALLOWED_MAJOR_IDS = new Set<string>([
-  "BSCS",
-  "BSSE",
-  "BSIS",
-  "BSGD",
-  "BSAIE",
-  "BSAAI",
-  "UNDECIDED",
-]);
+const ALLOWED_MAJOR_IDS = new Set<MajorId>(MAJORS.map((m) => m.id));
 
 function unauthorized(): Response {
   return Response.json({ error: "unauthorized" }, { status: 401 });
@@ -28,9 +20,7 @@ function isNonEmptyString(v: unknown): v is string {
   return typeof v === "string" && v.trim().length > 0;
 }
 
-function validateProfilePayload(
-  payload: any,
-): { ok: true; value: ProfileUpsertInput } | { ok: false; error: string } {
+function validateProfilePayload(payload: any): { ok: true; value: Omit<ProfileRecord, "updatedAt"> } | { ok: false; error: string } {
   if (!payload || typeof payload !== "object") {
     return { ok: false, error: "Invalid JSON body" };
   }
@@ -38,12 +28,15 @@ function validateProfilePayload(
   const displayName = typeof payload.displayName === "string" ? payload.displayName.trim() : "";
   if (!displayName) return { ok: false, error: "displayName required" };
 
+  const location = typeof payload.location === "string" ? payload.location.trim() : "";
+  if (!location) return { ok: false, error: "location required" };
+
   const emailRaw = payload.email;
   const email = typeof emailRaw === "string" && emailRaw.trim().length > 0 ? emailRaw.trim() : undefined;
 
   const intendedMajorId = payload.intendedMajorId as unknown;
   if (!isNonEmptyString(intendedMajorId)) return { ok: false, error: "intendedMajorId required" };
-  if (!ALLOWED_MAJOR_IDS.has(intendedMajorId)) {
+  if (!ALLOWED_MAJOR_IDS.has(intendedMajorId as MajorId)) {
     return { ok: false, error: "intendedMajorId invalid" };
   }
 
@@ -64,7 +57,8 @@ function validateProfilePayload(
     value: {
       displayName,
       email,
-      intendedMajorId,
+      location,
+      intendedMajorId: intendedMajorId as MajorId,
       avatar: { provider: "dicebear", style, seed },
     },
   };
@@ -83,7 +77,7 @@ export async function handleProfileApi(req: Request): Promise<Response> {
   if (!username) return unauthorized();
 
   if (method === "GET") {
-    const profile: ProfileRecord | null = getByUsername(username);
+    const profile = await profileStore.getByUsername(username);
     return Response.json({ profile });
   }
 
@@ -100,9 +94,15 @@ export async function handleProfileApi(req: Request): Promise<Response> {
       return Response.json({ error: validated.error }, { status: 400 });
     }
 
-    const saved = upsertByUsername(username, validated.value);
+    const now = new Date().toISOString();
+    const saved = await profileStore.upsertByUsername(username, { ...validated.value, updatedAt: now });
+    if (!saved) {
+      return Response.json({ error: "Failed to save profile" }, { status: 500 });
+    }
+
     return Response.json({ profile: saved });
   }
 
   return Response.json({ error: "Method not allowed" }, { status: 405 });
 }
+

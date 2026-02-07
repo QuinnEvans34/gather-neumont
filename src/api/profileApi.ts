@@ -1,40 +1,35 @@
-export type ProfileRecord = {
-  username: string;
+import type { ProfileDraft } from "../features/profile/profileTypes";
+
+export type ServerProfile = {
   displayName: string;
   email?: string;
+  location: string;
   intendedMajorId: string;
   avatar: { provider: "dicebear"; style: string; seed: string };
   updatedAt: string;
 };
 
-export type PutProfilePayload = {
-  displayName: string;
-  email?: string;
-  intendedMajorId: string;
-  avatar: { provider: "dicebear"; style: string; seed: string };
-};
-
-export async function getProfile(): Promise<ProfileRecord | null> {
-  const res = await fetch("/api/profile", { method: "GET", credentials: "include" });
+export async function getProfile(): Promise<ServerProfile | null> {
+  const res = await fetch("/api/profile", { method: "GET" });
   if (res.status === 401) return null;
   if (!res.ok) {
     throw new Error(`GET /api/profile failed (${res.status})`);
   }
 
-  const data = (await res.json()) as { profile?: ProfileRecord | null };
+  const data = (await res.json()) as { profile?: ServerProfile | null };
   return data?.profile ?? null;
 }
 
-export async function putProfile(payload: PutProfilePayload): Promise<ProfileRecord> {
+export async function putProfile(profileDraft: ProfileDraft): Promise<ServerProfile> {
   const res = await fetch("/api/profile", {
     method: "PUT",
-    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      displayName: payload.displayName,
-      email: payload.email,
-      intendedMajorId: payload.intendedMajorId,
-      avatar: payload.avatar,
+      displayName: profileDraft.displayName,
+      email: profileDraft.email,
+      location: profileDraft.location,
+      intendedMajorId: profileDraft.intendedMajorId,
+      avatar: profileDraft.avatar,
     }),
   });
 
@@ -52,6 +47,7 @@ export async function putProfile(payload: PutProfilePayload): Promise<ProfileRec
     throw new Error(msg);
   }
 
-  const data = (await res.json()) as { profile: ProfileRecord };
+  const data = (await res.json()) as { profile: ServerProfile };
   return data.profile;
 }
+

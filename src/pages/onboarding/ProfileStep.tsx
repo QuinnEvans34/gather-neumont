@@ -1,9 +1,12 @@
 import type { CSSProperties, FormEvent } from "react";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { putProfile } from "../../api/profileApi";
+import { useAuth } from "../../features/auth/AuthContext";
 import { useProfile } from "../../features/profile/ProfileContext";
 
 export default function ProfileStep() {
+  const auth = useAuth();
   const profile = useProfile();
   const navigate = useNavigate();
 
@@ -19,12 +22,28 @@ export default function ProfileStep() {
     e.preventDefault();
     if (!canContinue) return;
 
-    profile.setProfileDraft({
+    const nextDraft = {
+      ...profile.profileDraft,
       displayName: displayName.trim(),
       location: locationText.trim(),
       email: email.trim() ? email.trim() : undefined,
+    };
+
+    profile.setProfileDraft({
+      displayName: nextDraft.displayName,
+      location: nextDraft.location,
+      email: nextDraft.email,
     });
+
     navigate("/onboarding/avatar");
+
+    // Guests never call the server. Logged-in users can attempt a save, but it must not block onboarding.
+    if (auth.mode === "user" || auth.mode === "admin") {
+      void putProfile(nextDraft).catch((err) => {
+        // eslint-disable-next-line no-console
+        console.warn("Failed to save profile to server:", err);
+      });
+    }
   }
 
   const inputStyle: CSSProperties = {
