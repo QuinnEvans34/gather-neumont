@@ -5,6 +5,7 @@ import { handleQuizApi } from "./server/api/quiz";
 import { handleAuthApi } from "./server/api/auth";
 import { handleLeaderboardApi } from "./server/api/leaderboard";
 import { handleAdminApi } from "./server/api/admin";
+import { handleProfileApi } from "./server/api/profile";
 
 const ASSETS_DIR = normalize(join(import.meta.dir, "..", "public", "assets"));
 
@@ -72,6 +73,10 @@ async function apiHandler(req: Request): Promise<Response> {
 
   if (url.pathname.startsWith("/api/admin")) {
     return handleAdminApi(req);
+  }
+
+  if (url.pathname.startsWith("/api/profile")) {
+    return handleProfileApi(req);
   }
 
   // Default 404 for unknown API routes

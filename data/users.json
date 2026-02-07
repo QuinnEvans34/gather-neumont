@@ -96,6 +96,12 @@
       "username": "asdfasdf",
       "isAdmin": false,
       "createdAt": "2026-02-07T17:08:40.644Z"
+    },
+    {
+      "id": "9e439dba-e343-43b7-a231-feee7e2250ae",
+      "username": "dafsdfa",
+      "isAdmin": false,
+      "createdAt": "2026-02-07T17:58:03.155Z"
     }
   ]
 }

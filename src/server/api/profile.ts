@@ -1,9 +1,17 @@
 import { getUserIdFromRequest } from "./auth";
 import { getUserById } from "../data/users.store";
-import { profileStore, type ProfileRecord } from "../data/profiles.store";
-import { MAJORS, type MajorId } from "../../config/majors";
+import { getByUsername, upsertByUsername } from "../data/profile.store";
+import type { ProfileRecord, ProfileUpsertInput } from "../types/profile";
 
-const ALLOWED_MAJOR_IDS = new Set<MajorId>(MAJORS.map((m) => m.id));
+const ALLOWED_MAJOR_IDS = new Set<string>([
+  "BSCS",
+  "BSSE",
+  "BSIS",
+  "BSGD",
+  "BSAIE",
+  "BSAAI",
+  "UNDECIDED",
+]);
 
 function unauthorized(): Response {
   return Response.json({ error: "unauthorized" }, { status: 401 });
@@ -20,7 +28,9 @@ function isNonEmptyString(v: unknown): v is string {
   return typeof v === "string" && v.trim().length > 0;
 }
 
-function validateProfilePayload(payload: any): { ok: true; value: Omit<ProfileRecord, "updatedAt"> } | { ok: false; error: string } {
+function validateProfilePayload(
+  payload: any,
+): { ok: true; value: ProfileUpsertInput } | { ok: false; error: string } {
   if (!payload || typeof payload !== "object") {
     return { ok: false, error: "Invalid JSON body" };
   }
@@ -36,7 +46,7 @@ function validateProfilePayload(payload: any): { ok: true; value: Omit<ProfileRe
 
   const intendedMajorId = payload.intendedMajorId as unknown;
   if (!isNonEmptyString(intendedMajorId)) return { ok: false, error: "intendedMajorId required" };
-  if (!ALLOWED_MAJOR_IDS.has(intendedMajorId as MajorId)) {
+  if (!ALLOWED_MAJOR_IDS.has(intendedMajorId)) {
     return { ok: false, error: "intendedMajorId invalid" };
   }
 
@@ -58,7 +68,7 @@ function validateProfilePayload(payload: any): { ok: true; value: Omit<ProfileRe
       displayName,
       email,
       location,
-      intendedMajorId: intendedMajorId as MajorId,
+      intendedMajorId,
       avatar: { provider: "dicebear", style, seed },
     },
   };
@@ -77,7 +87,7 @@ export async function handleProfileApi(req: Request): Promise<Response> {
   if (!username) return unauthorized();
 
   if (method === "GET") {
-    const profile = await profileStore.getByUsername(username);
+    const profile: ProfileRecord | null = getByUsername(username);
     return Response.json({ profile });
   }
 
@@ -94,15 +104,9 @@ export async function handleProfileApi(req: Request): Promise<Response> {
       return Response.json({ error: validated.error }, { status: 400 });
     }
 
-    const now = new Date().toISOString();
-    const saved = await profileStore.upsertByUsername(username, { ...validated.value, updatedAt: now });
-    if (!saved) {
-      return Response.json({ error: "Failed to save profile" }, { status: 500 });
-    }
-
+    const saved = upsertByUsername(username, validated.value);
     return Response.json({ profile: saved });
   }
 
   return Response.json({ error: "Method not allowed" }, { status: 405 });
 }
-

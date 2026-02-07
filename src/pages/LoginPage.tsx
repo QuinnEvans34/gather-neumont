@@ -1,6 +1,7 @@
 import type { FormEvent } from "react";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { usernameExists } from "../api/authApi";
 import { useAuth } from "../features/auth/AuthContext";
 
 export default function LoginPage() {
@@ -9,13 +10,40 @@ export default function LoginPage() {
 
   const [username, setUsername] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [existsError, setExistsError] = useState<string | null>(null);
+  const [accountExists, setAccountExists] = useState<boolean | null>(null);
+  const [checkedFor, setCheckedFor] = useState<string>("");
 
   const canSubmit = useMemo(() => username.trim().length > 0 && !isSubmitting, [isSubmitting, username]);
+
+  async function checkExists(name: string): Promise<void> {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    if (trimmed === checkedFor) return;
+
+    setIsChecking(true);
+    setExistsError(null);
+    try {
+      const exists = await usernameExists(trimmed);
+      setAccountExists(exists);
+      setCheckedFor(trimmed);
+    } catch (err) {
+      setAccountExists(null);
+      setCheckedFor(trimmed);
+      setExistsError(err instanceof Error ? err.message : "Could not check username");
+    } finally {
+      setIsChecking(false);
+    }
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (!canSubmit) return;
+
+    // Requirement: check on submit as well (non-blocking).
+    void checkExists(username);
 
     setIsSubmitting(true);
     setError(null);
@@ -42,7 +70,13 @@ export default function LoginPage() {
             <div style={{ fontSize: 14, opacity: 0.9 }}>Username</div>
             <input
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e) => {
+                setUsername(e.target.value);
+                setAccountExists(null);
+                setExistsError(null);
+                setCheckedFor("");
+              }}
+              onBlur={() => void checkExists(username)}
               placeholder="your_name"
               autoComplete="username"
               style={{
@@ -56,6 +90,22 @@ export default function LoginPage() {
               }}
             />
           </label>
+
+          {accountExists === true ? (
+            <div style={{ fontSize: 13, opacity: 0.9 }}>Account exists. Sign in to continue.</div>
+          ) : accountExists === false ? (
+            <div style={{ fontSize: 13, opacity: 0.9 }}>No account found. This will create one.</div>
+          ) : (
+            <div style={{ fontSize: 13, opacity: 0.75 }}>
+              {isChecking ? "Checking username..." : " "}
+            </div>
+          )}
+
+          {existsError ? (
+            <div style={{ fontSize: 13, color: "#ffdd9a", opacity: 0.95 }}>
+              Could not check username. You can still try to sign in.
+            </div>
+          ) : null}
 
           {error ? (
             <div style={{ fontSize: 13, color: "#ffb4b4", opacity: 0.95 }}>{error}</div>
@@ -73,7 +123,13 @@ export default function LoginPage() {
               cursor: canSubmit ? "pointer" : "not-allowed",
             }}
           >
-            {isSubmitting ? "Signing in..." : "Sign in"}
+            {isSubmitting
+              ? "Signing in..."
+              : accountExists === true
+                ? "Sign in"
+                : accountExists === false
+                  ? "Create account"
+                  : "Continue"}
           </button>
         </form>
 

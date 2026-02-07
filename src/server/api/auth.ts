@@ -116,6 +116,17 @@ async function handleLogout(req: Request): Promise<Response> {
   return jsonWithCookie({ success: true }, clearSessionCookie());
 }
 
+async function handleExists(req: Request): Promise<Response> {
+  const url = new URL(req.url);
+  const username = url.searchParams.get("username")?.trim();
+  if (!username) {
+    return Response.json({ error: "username required" }, { status: 400 });
+  }
+
+  const user = await getUserByUsername(username);
+  return Response.json({ exists: Boolean(user) });
+}
+
 export function getUserIdFromRequest(req: Request): string | null {
   const cookies = parseCookies(req.headers.get("cookie"));
   const token = cookies.session;
@@ -136,6 +147,10 @@ export async function handleAuthApi(req: Request): Promise<Response> {
 
   if (method === "GET" && path === "/api/auth/me") {
     return handleMe(req);
+  }
+
+  if (method === "GET" && path === "/api/auth/exists") {
+    return handleExists(req);
   }
 
   if (method === "POST" && path === "/api/auth/logout") {
