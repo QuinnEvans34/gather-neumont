@@ -117,6 +117,7 @@ export function useQuiz(): UseQuizReturn {
     try {
       const response = await fetch("/api/quiz/start", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ guestToken }),
       });
@@ -171,6 +172,7 @@ export function useQuiz(): UseQuizReturn {
       try {
         const response = await fetch("/api/quiz/submit", {
           method: "POST",
+          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             guestToken,

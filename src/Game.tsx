@@ -1,35 +1,13 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import Phaser from "phaser";
 import createGame from "./game.ts";
-import { isOverlayRoute } from "./utils/overlayRoutes";
-import DialogueUI from "./components/DialogueUI.tsx";
-import QuestTracker from "./components/QuestTracker.tsx";
-import PlayerProfile from "./components/PlayerProfile.tsx";
-import QuizPanel from "./ui/quiz/QuizPanel.tsx";
-import { useQuestData, useSelectedQuest } from "./hooks/useQuestData.ts";
-import { usePlayerData } from "./hooks/usePlayerData.ts";
-import { doc, updateDoc, arrayRemove } from "firebase/firestore";
-import { db, COLLECTIONS } from "./lib/firebase.ts";
-import FirestoreHelpers from "./lib/firestore-helpers.ts";
-import { GameEventBridge } from "./systems/GameEventBridge.ts";
-
-/**
- * TODO: Replace with actual authenticated player username
- * For now, using sarah_dev test player from Firebase seed data
- * This should be replaced with Firebase Auth or user context
- *
- * sarah_dev player has:
- * - 2 active quests
- * - 3 completed quests
- * - Username: sarah_dev
- * - Real Name: Sarah Martinez
- */
-const TEST_PLAYER_USERNAME = "sarah_dev"; // Stable username from seed data
+import { appEvents } from "./events/appEvents";
 
 function GamePage() {
   const gameRef = useRef<Phaser.Game | null>(null);
   const location = useLocation();
+  const [isDailyQuizOpen, setIsDailyQuizOpen] = useState(false);
 
   useEffect(() => {
     // Initialize Phaser game on mount
@@ -52,7 +30,7 @@ function GamePage() {
 
     const isOverlayRoute =
       location.pathname === "/login" || location.pathname.startsWith("/onboarding");
-    const enabled = !isOverlayRoute;
+    const enabled = !isOverlayRoute && !isDailyQuizOpen;
 
     const keyboard = (game as any).input?.keyboard as Phaser.Input.Keyboard.KeyboardPlugin | undefined;
     if (keyboard) {
@@ -68,7 +46,23 @@ function GamePage() {
         sceneKeyboard.enabled = enabled;
       }
     }
-  }, [location.pathname]);
+  }, [isDailyQuizOpen, location.pathname]);
+
+  useEffect(() => {
+    const offDailyQuizOpen = appEvents.onDailyQuizOpenChanged((isOpen) => {
+      setIsDailyQuizOpen(isOpen);
+    });
+
+    function onTerminalStart(_event: Event) {
+      appEvents.emitOpenDailyQuiz();
+    }
+
+    window.addEventListener("dailyQuiz:start", onTerminalStart);
+    return () => {
+      offDailyQuizOpen();
+      window.removeEventListener("dailyQuiz:start", onTerminalStart);
+    };
+  }, []);
 
   return (
     <div className="game-wrapper" style={{ position: "fixed", inset: 0 }}>
