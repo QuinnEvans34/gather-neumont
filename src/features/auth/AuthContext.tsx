@@ -5,10 +5,11 @@ import { authStorage } from "./authStorage";
 type AuthContextValue = {
   mode: AuthMode;
   me?: AuthMe;
+  profileComplete: boolean | null;
   continueAsGuest: () => void;
   login: (username: string) => Promise<void>;
   logout: () => Promise<void>;
-  refresh: () => Promise<void>;
+  refresh: () => Promise<{ username: string; isAdmin: boolean; profileComplete: boolean | null } | null>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -18,7 +19,9 @@ function toModeFromMe(me: AuthMe | undefined): AuthMode {
   return me.isAdmin ? "admin" : "user";
 }
 
-function parseMeFromApi(payload: unknown): AuthMe | undefined {
+function parseUserFromApi(
+  payload: unknown,
+): { me: AuthMe; profileComplete: boolean | null } | undefined {
   if (!payload || typeof payload !== "object") return undefined;
 
   const anyPayload = payload as any;
@@ -29,7 +32,9 @@ function parseMeFromApi(payload: unknown): AuthMe | undefined {
   if (typeof username !== "string" || !username.trim()) return undefined;
 
   const isAdmin = Boolean((user as any).isAdmin ?? (user as any).admin);
-  return { username, isAdmin };
+  const profileComplete =
+    typeof (user as any).profileComplete === "boolean" ? Boolean((user as any).profileComplete) : null;
+  return { me: { username, isAdmin }, profileComplete };
 }
 
 export function AuthProvider(props: { children: React.ReactNode }) {
@@ -37,13 +42,15 @@ export function AuthProvider(props: { children: React.ReactNode }) {
     authStorage.isGuestChosen() ? "guest" : "unknown",
   );
   const [me, setMe] = useState<AuthMe | undefined>(undefined);
+  const [profileComplete, setProfileComplete] = useState<boolean | null>(null);
 
-  const refreshInFlight = useRef<Promise<void> | null>(null);
+  const refreshInFlight = useRef<Promise<{ username: string; isAdmin: boolean; profileComplete: boolean | null } | null> | null>(null);
   const didInit = useRef(false);
 
   const continueAsGuest = useCallback(() => {
     authStorage.setGuestChosen(true);
     setMe(undefined);
+    setProfileComplete(null);
     setMode("guest");
   }, []);
 
@@ -52,6 +59,7 @@ export function AuthProvider(props: { children: React.ReactNode }) {
 
     const res = await fetch("/api/auth/login", {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ username }),
     });
@@ -68,22 +76,25 @@ export function AuthProvider(props: { children: React.ReactNode }) {
     }
 
     const data = await res.json();
-    const nextMe = parseMeFromApi(data);
-    if (!nextMe) {
+    const parsed = parseUserFromApi(data);
+    if (!parsed) {
       throw new Error("Login succeeded but user payload was missing/invalid");
     }
 
-    setMe(nextMe);
-    setMode(toModeFromMe(nextMe));
+    setMe(parsed.me);
+    setMode(toModeFromMe(parsed.me));
+    // Login doesn't guarantee the profile fields are included; refresh will populate this.
+    setProfileComplete(parsed.profileComplete);
   }, []);
 
   const logout = useCallback(async () => {
     authStorage.setGuestChosen(false);
     setMe(undefined);
+    setProfileComplete(null);
     setMode("unknown");
 
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     } catch {
       // If the endpoint doesn't exist or the network fails, client state is already cleared.
     }
@@ -92,33 +103,44 @@ export function AuthProvider(props: { children: React.ReactNode }) {
   const refresh = useCallback(async () => {
     if (authStorage.isGuestChosen()) {
       setMe(undefined);
+      setProfileComplete(null);
       setMode("guest");
-      return;
+      return null;
     }
 
     if (refreshInFlight.current) return refreshInFlight.current;
 
     refreshInFlight.current = (async () => {
       try {
-        const res = await fetch("/api/auth/me", { method: "GET" });
+        const res = await fetch("/api/auth/me", { method: "GET", credentials: "include" });
         if (!res.ok) {
           // If the endpoint doesn't exist, keep "unknown" until login/guest.
-          if (res.status === 404) return;
-          return;
+          if (res.status === 404) return null;
+          if (res.status === 401) {
+            setMe(undefined);
+            setProfileComplete(null);
+            setMode("unknown");
+            return null;
+          }
+          return null;
         }
 
         const data = await res.json();
-        const nextMe = parseMeFromApi(data);
-        if (!nextMe) {
+        const parsed = parseUserFromApi(data);
+        if (!parsed) {
           setMe(undefined);
+          setProfileComplete(null);
           setMode("unknown");
-          return;
+          return null;
         }
 
-        setMe(nextMe);
-        setMode(toModeFromMe(nextMe));
+        setMe(parsed.me);
+        setProfileComplete(parsed.profileComplete);
+        setMode(toModeFromMe(parsed.me));
+        return { ...parsed.me, profileComplete: parsed.profileComplete };
       } catch {
         // keep current state
+        return null;
       } finally {
         refreshInFlight.current = null;
       }
@@ -134,8 +156,8 @@ export function AuthProvider(props: { children: React.ReactNode }) {
   }, [refresh]);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ mode, me, continueAsGuest, login, logout, refresh }),
-    [continueAsGuest, login, logout, me, mode, refresh],
+    () => ({ mode, me, profileComplete, continueAsGuest, login, logout, refresh }),
+    [continueAsGuest, login, logout, me, mode, profileComplete, refresh],
   );
 
   return <AuthContext.Provider value={value}>{props.children}</AuthContext.Provider>;
@@ -148,4 +170,3 @@ export function useAuth(): AuthContextValue {
   }
   return ctx;
 }
-

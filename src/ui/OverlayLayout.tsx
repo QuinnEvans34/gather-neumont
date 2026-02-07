@@ -1,8 +1,10 @@
 import { useEffect, useRef } from "react";
 import { useOutlet } from "react-router-dom";
 import GamePage from "../Game.tsx";
+import { useAuth } from "../features/auth/AuthContext";
 
 export default function OverlayLayout() {
+  const auth = useAuth();
   const outlet = useOutlet();
   const isOverlayVisible = outlet != null;
   const overlayRootRef = useRef<HTMLDivElement | null>(null);
@@ -37,6 +39,28 @@ export default function OverlayLayout() {
   return (
     <div style={{ width: "100%", height: "100%" }}>
       <GamePage />
+
+      {auth.mode === "guest" ? (
+        <div
+          style={{
+            position: "fixed",
+            top: 12,
+            right: 12,
+            zIndex: 50,
+            pointerEvents: "none",
+            padding: "6px 10px",
+            borderRadius: 999,
+            border: "1px solid rgba(255, 255, 255, 0.16)",
+            background: "rgba(0, 0, 0, 0.45)",
+            color: "rgba(255, 255, 255, 0.9)",
+            fontSize: 12,
+            lineHeight: 1,
+            backdropFilter: "blur(6px)",
+          }}
+        >
+          Guest — progress not saved
+        </div>
+      ) : null}
 
       {isOverlayVisible ? (
         <div

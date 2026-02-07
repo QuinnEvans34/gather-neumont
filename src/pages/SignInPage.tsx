@@ -54,7 +54,12 @@ export default function SignInPage() {
       }
 
       await auth.login(trimmed);
-      navigate("/");
+      const refreshed = await auth.refresh();
+      if (refreshed?.profileComplete) {
+        navigate("/");
+      } else {
+        navigate("/onboarding/profile");
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign in failed");
     } finally {
@@ -113,4 +118,3 @@ export default function SignInPage() {
     </div>
   );
 }
-

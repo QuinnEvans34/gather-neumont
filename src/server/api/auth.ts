@@ -4,6 +4,7 @@ import {
   getUserById,
   getUserByUsername,
 } from "../data/users.store";
+import { getByUsername as getProfileByUsername } from "../data/profile.store";
 import {
   buildSessionCookie,
   clearSessionCookie,
@@ -87,23 +88,45 @@ async function handleLogin(req: Request): Promise<Response> {
 async function handleMe(req: Request): Promise<Response> {
   const token = getSessionToken(req);
   if (!token) {
-    return Response.json({ user: null });
+    return Response.json({ error: "unauthorized" }, { status: 401 });
   }
 
   const session = sessions.get(token);
   if (!session) {
-    return Response.json({ user: null });
+    return Response.json({ error: "unauthorized" }, { status: 401 });
   }
 
   let user = await getUserById(session.userId);
   if (!user) {
     sessions.delete(token);
-    return Response.json({ user: null });
+    return jsonWithCookie(
+      { error: "unauthorized" },
+      clearSessionCookie(),
+      { status: 401 }
+    );
   }
 
   user = await ensureAdminFlag(user);
+  const profile = getProfileByUsername(user.username);
+  const hasProfile = Boolean(profile);
+  const profileComplete = Boolean(
+    profile &&
+      typeof profile.displayName === "string" &&
+      profile.displayName.trim().length > 0 &&
+      typeof profile.location === "string" &&
+      profile.location.trim().length > 0 &&
+      typeof profile.intendedMajorId === "string" &&
+      profile.intendedMajorId.trim().length > 0 &&
+      profile.avatar &&
+      profile.avatar.provider === "dicebear" &&
+      typeof profile.avatar.style === "string" &&
+      profile.avatar.style.trim().length > 0 &&
+      typeof profile.avatar.seed === "string" &&
+      profile.avatar.seed.trim().length > 0
+  );
+
   return jsonWithCookie(
-    { user: { id: user.id, username: user.username, isAdmin: !!user.isAdmin } },
+    { user: { id: user.id, username: user.username, isAdmin: !!user.isAdmin, hasProfile, profileComplete } },
     buildSessionCookie(token, SESSION_MAX_AGE_SECONDS)
   );
 }
