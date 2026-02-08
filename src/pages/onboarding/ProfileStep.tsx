@@ -11,12 +11,11 @@ export default function ProfileStep() {
   const navigate = useNavigate();
 
   const [displayName, setDisplayName] = useState(profile.profileDraft.displayName);
-  const [locationText, setLocationText] = useState(profile.profileDraft.location);
   const [email, setEmail] = useState(profile.profileDraft.email ?? "");
 
   const canContinue = useMemo(() => {
-    return displayName.trim().length > 0 && locationText.trim().length > 0;
-  }, [displayName, locationText]);
+    return displayName.trim().length > 0;
+  }, [displayName]);
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -25,13 +24,11 @@ export default function ProfileStep() {
     const nextDraft = {
       ...profile.profileDraft,
       displayName: displayName.trim(),
-      location: locationText.trim(),
       email: email.trim() ? email.trim() : undefined,
     };
 
     profile.setProfileDraft({
       displayName: nextDraft.displayName,
-      location: nextDraft.location,
       email: nextDraft.email,
     });
 
@@ -40,7 +37,6 @@ export default function ProfileStep() {
       void putProfile({
         displayName: nextDraft.displayName,
         email: nextDraft.email,
-        location: nextDraft.location,
         intendedMajorId: nextDraft.intendedMajorId,
         avatar: {
           provider: "dicebear",
@@ -78,16 +74,6 @@ export default function ProfileStep() {
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="Alex"
-              style={inputStyle}
-            />
-          </label>
-
-          <label style={{ display: "grid", gap: 6 }}>
-            <div style={{ fontSize: 14, opacity: 0.9 }}>Location</div>
-            <input
-              value={locationText}
-              onChange={(e) => setLocationText(e.target.value)}
-              placeholder="Salt Lake City, UT"
               style={inputStyle}
             />
           </label>

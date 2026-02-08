@@ -148,7 +148,6 @@ export default function AvatarStep() {
                 void putProfile({
                   displayName: profile.profileDraft.displayName,
                   email: profile.profileDraft.email,
-                  location: profile.profileDraft.location,
                   intendedMajorId: profile.profileDraft.intendedMajorId,
                   avatar: { provider: "dicebear", style: String(style), seed: String(seed) },
                 }).catch(() => {

@@ -2,7 +2,6 @@ export type ProfileRecord = {
   username: string;
   displayName: string;
   email?: string;
-  location: string;
   intendedMajorId: string;
   avatar: { provider: "dicebear"; style: string; seed: string };
   updatedAt: string;
@@ -11,7 +10,6 @@ export type ProfileRecord = {
 export type PutProfilePayload = {
   displayName: string;
   email?: string;
-  location: string;
   intendedMajorId: string;
   avatar: { provider: "dicebear"; style: string; seed: string };
 };
@@ -35,7 +33,6 @@ export async function putProfile(payload: PutProfilePayload): Promise<ProfileRec
     body: JSON.stringify({
       displayName: payload.displayName,
       email: payload.email,
-      location: payload.location,
       intendedMajorId: payload.intendedMajorId,
       avatar: payload.avatar,
     }),

@@ -84,7 +84,6 @@ async function handleLogin(req: Request): Promise<Response> {
   if (user.username.toLowerCase() === "admin") {
     upsertProfileByUsername(user.username, {
       displayName: "Admin",
-      location: "Neumont",
       email: undefined,
       intendedMajorId: "UNDECIDED",
       avatar: { provider: "dicebear", style: "pixelArt", seed: "admin" },
@@ -125,8 +124,6 @@ async function handleMe(req: Request): Promise<Response> {
     profile &&
       typeof profile.displayName === "string" &&
       profile.displayName.trim().length > 0 &&
-      typeof profile.location === "string" &&
-      profile.location.trim().length > 0 &&
       typeof profile.intendedMajorId === "string" &&
       profile.intendedMajorId.trim().length > 0 &&
       profile.avatar &&

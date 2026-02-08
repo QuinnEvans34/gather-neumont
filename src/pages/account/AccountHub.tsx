@@ -35,7 +35,7 @@ export default function AccountHub() {
           <button type="button" onClick={() => navigate("/account/profile")} style={buttonStyle}>
             Edit Profile
             <div style={{ marginTop: 4, fontSize: 12, opacity: 0.85, fontWeight: 600 }}>
-              {draft.displayName?.trim() ? draft.displayName : "—"} · {draft.location?.trim() ? draft.location : "—"}
+              {draft.displayName?.trim() ? draft.displayName : "—"}
             </div>
           </button>
           <button type="button" onClick={() => navigate("/account/avatar")} style={buttonStyle}>
