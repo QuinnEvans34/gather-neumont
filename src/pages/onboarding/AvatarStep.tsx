@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { putProfile } from "../../api/profileApi";
 import { useAuth } from "../../features/auth/AuthContext";
@@ -11,6 +12,9 @@ export default function AvatarStep() {
   const auth = useAuth();
   const profile = useProfile();
   const navigate = useNavigate();
+
+  const baseSeedRef = useRef(profile.profileDraft.avatar.seed);
+  const [, setSeedOffset] = useState(0);
 
   const draftStyle = profile.profileDraft.avatar.style as DicebearStyleId | undefined;
   const style =
@@ -60,8 +64,17 @@ export default function AvatarStep() {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
             <button
               onClick={() => {
-                const prevStyle = getNextStyle(style, -1);
-                profile.setProfileDraft({ avatar: { style: prevStyle } });
+                if (AVATAR_STYLE_ORDER.length > 1) {
+                  const prevStyle = getNextStyle(style, -1);
+                  profile.setProfileDraft({ avatar: { style: prevStyle } });
+                  return;
+                }
+                setSeedOffset((prev) => {
+                  const next = prev - 1;
+                  const newSeed = `${baseSeedRef.current}:${next}`;
+                  profile.setProfileDraft({ avatar: { seed: newSeed } });
+                  return next;
+                });
               }}
               style={{
                 padding: "10px 12px",
@@ -77,8 +90,17 @@ export default function AvatarStep() {
 
             <button
               onClick={() => {
-                const nextStyle = getNextStyle(style, +1);
-                profile.setProfileDraft({ avatar: { style: nextStyle } });
+                if (AVATAR_STYLE_ORDER.length > 1) {
+                  const nextStyle = getNextStyle(style, +1);
+                  profile.setProfileDraft({ avatar: { style: nextStyle } });
+                  return;
+                }
+                setSeedOffset((prev) => {
+                  const next = prev + 1;
+                  const newSeed = `${baseSeedRef.current}:${next}`;
+                  profile.setProfileDraft({ avatar: { seed: newSeed } });
+                  return next;
+                });
               }}
               style={{
                 padding: "10px 12px",
@@ -94,7 +116,10 @@ export default function AvatarStep() {
 
             <button
               onClick={() => {
-                profile.setProfileDraft({ avatar: { seed: randomSeed() } });
+                const next = randomSeed();
+                baseSeedRef.current = next;
+                setSeedOffset(0);
+                profile.setProfileDraft({ avatar: { seed: next } });
               }}
               style={{
                 padding: "10px 12px",

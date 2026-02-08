@@ -19,7 +19,9 @@ export default function OverlayLayout() {
     pathname === "/login" ||
     pathname === "/admin" ||
     pathname === "/onboarding" ||
-    pathname.startsWith("/onboarding/");
+    pathname.startsWith("/onboarding/") ||
+    pathname === "/account" ||
+    pathname.startsWith("/account/");
   const overlayRootRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
