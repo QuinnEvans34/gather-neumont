@@ -50,21 +50,6 @@ Two layers cooperate to keep overlays feeling "in-game":
 Additionally, `OverlayLayout` captures keyboard events at the overlay root and stops
 propagation to Phaser listeners (while still allowing typing in inputs).
 
-## Overlay and Input Rules
-
-- The Phaser game always renders in the background (the game canvas never unmounts on route changes).
-- Certain routes are treated as **overlay routes** and render UI on top of the game.
-- While an overlay is open, gameplay keyboard input is disabled so the player cannot move while typing/clicking UI.
-- The Daily Quiz overlay also disables gameplay input while it is open (even though it is not a route).
-
-Overlay routes (render on top of the game):
-
-- `/sign-in`
-- `/create-account`
-- `/onboarding/*` (includes `/onboarding` index)
-- `/account/*` (includes `/account` index)
-- `/admin`
-
 ## Client-side storage keys
 
 Local storage:
@@ -92,3 +77,4 @@ Profile data includes:
 - `avatar` (`provider`, `style`, `seed`)
 
 There is no active profile field for a physical address/city field.
+

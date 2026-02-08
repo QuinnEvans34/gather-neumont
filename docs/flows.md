@@ -36,42 +36,6 @@ Debug checklist (when overlays are invisible or not click-through):
 - Check the route tree in `src/App.tsx` (nested outlets).
 - Check overlay root z-index/pointerEvents in `src/ui/OverlayLayout.tsx`.
 
-## Overlay + input gating mechanics
-
-```text
-  Router pathname
-      |
-      v
-  isOverlayRoute(pathname) ?
-     | yes                          | no
-     v                              v
-  OverlayLayout renders          OverlayLayout hides
-  overlay outlet on top          overlay outlet
-  of the game                    (game only)
-```
-
-Legend:
-- `isOverlayRoute(...)` is the shared overlay-route predicate.
-- The overlay outlet is the React Router `<Outlet />` rendered above the game.
-
-```text
-  (pathname, quizOpen)
-        |
-        v
-  disableKeyboard = isOverlayRoute(pathname) OR quizOpen
-        |
-        v
-  Game.tsx toggles Phaser keyboard enabled = NOT disableKeyboard
-```
-
-Legend:
-- `quizOpen` is the daily quiz overlay open state.
-- When disabled, the player cannot move while UI overlays are active.
-
-Troubleshooting:
-- If overlay page is blank, check overlay route detection.
-- If player moves while overlay open, check input gating.
-
 ## B) Daily quiz launch flow
 
 ```text
@@ -163,3 +127,4 @@ Debug checklist (when sign-in loops or onboarding gating is wrong):
 - Check `AuthProvider.refresh()` in `src/features/auth/AuthContext.tsx`.
 - Check onboarding guard logic in `src/App.tsx`.
 - If guest vs user feels mixed, check `happy-volhard.auth.guestChosen.v1`.
+
