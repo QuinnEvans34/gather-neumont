@@ -94,6 +94,12 @@ export function AuthProvider(props: { children: React.ReactNode }) {
     setMode("unknown");
 
     try {
+      sessionStorage.removeItem("guestMode");
+    } catch {
+      // ignore
+    }
+
+    try {
       await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     } catch {
       // If the endpoint doesn't exist or the network fails, client state is already cleared.

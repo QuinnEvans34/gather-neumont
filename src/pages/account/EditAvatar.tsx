@@ -1,13 +1,14 @@
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { putProfile } from "../../api/profileApi";
-import { useAuth } from "../../features/auth/AuthContext";
-import { useProfile } from "../../features/profile/ProfileContext";
 import { createAvatar } from "@dicebear/core";
 import { DICEBEAR_STYLE_LABELS, DICEBEAR_STYLES, type DicebearStyleId } from "../../avatars/dicebear_registry";
 import { AVATAR_STYLE_ORDER, getNextStyle } from "../../avatars/styleList";
 import { randomSeed } from "../../utils/random";
+import { useAuth } from "../../features/auth/AuthContext";
+import { useProfile } from "../../features/profile/ProfileContext";
 
-export default function AvatarStep() {
+export default function EditAvatar() {
   const auth = useAuth();
   const profile = useProfile();
   const navigate = useNavigate();
@@ -17,14 +18,34 @@ export default function AvatarStep() {
     draftStyle && AVATAR_STYLE_ORDER.includes(draftStyle) ? draftStyle : (AVATAR_STYLE_ORDER[0]! as DicebearStyleId);
   const seed = profile.profileDraft.avatar.seed;
 
-  const svg = createAvatar(DICEBEAR_STYLES[style], { seed }).toString();
+  const svg = useMemo(() => createAvatar(DICEBEAR_STYLES[style], { seed }).toString(), [seed, style]);
   const dataUrl = "data:image/svg+xml;utf8," + encodeURIComponent(svg);
   const styleLabel = DICEBEAR_STYLE_LABELS[style] ?? style;
 
+  async function handleSave() {
+    if (auth.mode === "user" || auth.mode === "admin") {
+      const nextDraft = { ...profile.profileDraft };
+      void putProfile({
+        displayName: nextDraft.displayName,
+        email: nextDraft.email,
+        location: nextDraft.location,
+        intendedMajorId: nextDraft.intendedMajorId,
+        avatar: {
+          provider: "dicebear",
+          style: String(nextDraft.avatar.style),
+          seed: String(nextDraft.avatar.seed),
+        },
+      }).catch(() => {
+        // Non-blocking: ignore errors and return to hub.
+      });
+    }
+    navigate("/account");
+  }
+
   return (
     <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
-      <div style={{ maxWidth: 520, padding: 24 }}>
-        <h1>Avatar</h1>
+      <div style={{ maxWidth: 520, width: "min(520px, calc(100vw - 48px))", padding: 24 }}>
+        <h1 style={{ margin: 0 }}>Edit Avatar</h1>
         <p style={{ marginTop: 8, opacity: 0.9 }}>DiceBear preview ({styleLabel})</p>
 
         <div style={{ marginTop: 12, display: "flex", justifyContent: "center" }}>
@@ -44,9 +65,7 @@ export default function AvatarStep() {
 
         <p style={{ marginTop: 10, fontSize: 13, opacity: 0.9 }}>
           Style:{" "}
-          <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>
-            {style}
-          </span>
+          <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>{style}</span>
         </p>
 
         <p style={{ marginTop: 12, fontSize: 13, opacity: 0.85 }}>
@@ -59,6 +78,7 @@ export default function AvatarStep() {
         <div style={{ marginTop: 16, display: "grid", gap: 10 }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
             <button
+              type="button"
               onClick={() => {
                 const prevStyle = getNextStyle(style, -1);
                 profile.setProfileDraft({ avatar: { style: prevStyle } });
@@ -70,12 +90,14 @@ export default function AvatarStep() {
                 background: "rgba(255, 255, 255, 0.06)",
                 color: "inherit",
                 cursor: "pointer",
+                fontWeight: 700,
               }}
             >
               Previous
             </button>
 
             <button
+              type="button"
               onClick={() => {
                 const nextStyle = getNextStyle(style, +1);
                 profile.setProfileDraft({ avatar: { style: nextStyle } });
@@ -87,12 +109,14 @@ export default function AvatarStep() {
                 background: "rgba(255, 255, 255, 0.06)",
                 color: "inherit",
                 cursor: "pointer",
+                fontWeight: 700,
               }}
             >
               Next
             </button>
 
             <button
+              type="button"
               onClick={() => {
                 profile.setProfileDraft({ avatar: { seed: randomSeed() } });
               }}
@@ -103,6 +127,7 @@ export default function AvatarStep() {
                 background: "rgba(255, 255, 255, 0.06)",
                 color: "inherit",
                 cursor: "pointer",
+                fontWeight: 700,
               }}
             >
               New Seed
@@ -110,29 +135,8 @@ export default function AvatarStep() {
           </div>
 
           <button
-            onClick={async () => {
-              if (!profile.hasProfileBasics()) {
-                navigate("/onboarding/profile");
-                return;
-              }
-              if (!profile.hasAvatar()) {
-                return;
-              }
-
-              if (auth.mode === "user" || auth.mode === "admin") {
-                void putProfile({
-                  displayName: profile.profileDraft.displayName,
-                  email: profile.profileDraft.email,
-                  location: profile.profileDraft.location,
-                  intendedMajorId: profile.profileDraft.intendedMajorId,
-                  avatar: { provider: "dicebear", style: String(style), seed: String(seed) },
-                }).catch(() => {
-                  // Non-blocking: ignore errors and continue onboarding.
-                });
-              }
-
-              navigate("/onboarding/major");
-            }}
+            type="button"
+            onClick={handleSave}
             style={{
               padding: "10px 12px",
               borderRadius: 10,
@@ -140,9 +144,26 @@ export default function AvatarStep() {
               background: "rgba(255, 255, 255, 0.12)",
               color: "inherit",
               cursor: "pointer",
+              fontWeight: 800,
             }}
           >
-            Continue
+            Save
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate("/account")}
+            style={{
+              padding: "10px 12px",
+              borderRadius: 10,
+              border: "1px solid rgba(255, 255, 255, 0.18)",
+              background: "rgba(255, 255, 255, 0.06)",
+              color: "inherit",
+              cursor: "pointer",
+              fontWeight: 700,
+            }}
+          >
+            Cancel
           </button>
         </div>
       </div>

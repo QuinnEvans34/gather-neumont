@@ -1,5 +1,6 @@
 import { createAvatar } from "@dicebear/core";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { MAJORS } from "../../config/majors";
 import { DICEBEAR_STYLES } from "../../avatars/dicebear_registry";
 import { useAuth } from "../../features/auth/AuthContext";
@@ -8,6 +9,7 @@ import { useProfile } from "../../features/profile/ProfileContext";
 export default function ProfileHUD() {
   const auth = useAuth();
   const profile = useProfile();
+  const navigate = useNavigate();
 
   const username = auth.me?.username?.trim() ? auth.me.username : "Guest";
   const draft = profile.profileDraft;
@@ -34,6 +36,18 @@ export default function ProfileHUD() {
       return null;
     }
   }, [draft.avatar]);
+
+  const handleEditAccount = () => {
+    setOpen(false);
+    console.log("Navigate to /account");
+    navigate("/account");
+  };
+
+  const handleLogout = async () => {
+    setOpen(false);
+    await auth.logout();
+    navigate("/onboarding");
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -158,18 +172,65 @@ export default function ProfileHUD() {
             />
             <Row label="Intended Major" value={majorLabel || "—"} />
 
-            {auth.mode === "guest" ? (
-              <div
+            <div
+              style={{
+                marginTop: 6,
+                paddingTop: 10,
+                borderTop: "1px solid rgba(255,255,255,0.12)",
+                display: "grid",
+                gap: 8,
+              }}
+            >
+              <button
+                type="button"
+                onClick={handleEditAccount}
                 style={{
-                  marginTop: 4,
-                  paddingTop: 10,
-                  borderTop: "1px solid rgba(255,255,255,0.12)",
-                  opacity: 0.9,
+                  pointerEvents: "auto",
+                  cursor: "pointer",
+                  borderRadius: 10,
+                  border: "1px solid rgba(255, 255, 255, 0.18)",
+                  background: "rgba(255,255,255,0.06)",
+                  color: "rgba(255, 255, 255, 0.92)",
+                  padding: "8px 10px",
+                  fontFamily: "inherit",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  lineHeight: 1,
+                  textAlign: "left",
                 }}
               >
-                Guest — progress not saved
-              </div>
-            ) : null}
+                Edit account
+              </button>
+
+              {auth.me?.username ? (
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  style={{
+                    cursor: "pointer",
+                    borderRadius: 10,
+                    border: "1px solid rgba(255, 255, 255, 0.18)",
+                    background: "rgba(255,255,255,0.06)",
+                    color: "rgba(255, 255, 255, 0.92)",
+                    padding: "8px 10px",
+                    fontFamily: "inherit",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    lineHeight: 1,
+                    textAlign: "left",
+                  }}
+                >
+                  Log out
+                </button>
+              ) : null}
+
+              {auth.mode === "guest" ? (
+                <div style={{ opacity: 0.9, fontSize: 12 }}>
+                  Guest — progress not saved
+                </div>
+              ) : null}
+            </div>
+
           </div>
         </div>
       ) : null}

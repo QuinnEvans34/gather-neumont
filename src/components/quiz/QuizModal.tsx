@@ -16,6 +16,8 @@ interface QuizModalProps {
   isAdmin?: boolean;
   initialTab?: Tab;
   onViewLeaderboard?: () => void;
+  variant?: "modal" | "embedded";
+  closeHandleRef?: { current: null | (() => void) };
 }
 
 type Tab = "quiz" | "admin" | "questions" | "schedule";
@@ -113,6 +115,8 @@ export function QuizModal({
   isAdmin = false,
   initialTab,
   onViewLeaderboard,
+  variant = "modal",
+  closeHandleRef,
 }: QuizModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>("quiz");
   const [mode, setMode] = useState<"daily" | "test">("daily");
@@ -219,6 +223,14 @@ export function QuizModal({
     quiz.reset();
     onClose();
   }, [mode, quiz, onClose]);
+
+  useEffect(() => {
+    if (!closeHandleRef) return;
+    closeHandleRef.current = handleClose;
+    return () => {
+      closeHandleRef.current = null;
+    };
+  }, [closeHandleRef, handleClose]);
 
   const handleBackdropClick = useCallback(
     (e: React.MouseEvent) => {
@@ -940,9 +952,22 @@ export function QuizModal({
     return null;
   };
 
-  return (
-    <div className="quiz-modal-backdrop" onClick={handleBackdropClick}>
-      <div className="quiz-modal-panel quiz-ui">
+  const panel = (
+    <div
+      className="quiz-modal-panel quiz-ui"
+      style={
+        variant === "embedded"
+          ? {
+              width: "100%",
+              height: "100%",
+              border: "none",
+              borderRadius: 0,
+              boxShadow: "none",
+              animation: "none",
+            }
+          : undefined
+      }
+    >
         <header className="quiz-modal-header">
           <div className="quiz-modal-tabs">
             <button
@@ -1393,6 +1418,15 @@ export function QuizModal({
           )}
         </div>
       </div>
+  );
+
+  if (variant === "embedded") {
+    return panel;
+  }
+
+  return (
+    <div className="quiz-modal-backdrop" onClick={handleBackdropClick}>
+      {panel}
     </div>
   );
 }

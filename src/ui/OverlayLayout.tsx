@@ -3,7 +3,7 @@ import { useLocation, useOutlet } from "react-router-dom";
 import GamePage from "../Game.tsx";
 import { useAuth } from "../features/auth/AuthContext";
 import ProfileHUD from "./profile/ProfileHUD";
-import { QuizModal } from "../components/quiz/QuizModal";
+import QuizPanel from "./quiz/QuizPanel";
 import { appEvents } from "../events/appEvents";
 import "../styles/quiz-ui.css";
 
@@ -69,12 +69,7 @@ export default function OverlayLayout() {
       {!isOverlayVisible ? <ProfileHUD /> : null}
 
       {!isOverlayVisible ? (
-        <QuizModal
-          isOpen={isDailyQuizOpen}
-          onClose={() => setIsDailyQuizOpen(false)}
-          isAdmin={auth.mode === "admin"}
-          initialTab="quiz"
-        />
+        <QuizPanel isOpen={isDailyQuizOpen} onClose={() => setIsDailyQuizOpen(false)} />
       ) : null}
 
       {auth.mode === "guest" ? (
