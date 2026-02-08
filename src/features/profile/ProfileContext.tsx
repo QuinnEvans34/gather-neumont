@@ -30,7 +30,6 @@ function normalizeDraft(input: Partial<ProfileDraft> | undefined): ProfileDraft 
   return {
     displayName: input?.displayName ?? "",
     email: input?.email,
-    location: input?.location ?? "",
     avatar: {
       provider: "dicebear",
       style,
@@ -113,8 +112,7 @@ export function ProfileProvider(props: { children: React.ReactNode }) {
     const storedBasics =
       rawDraft &&
       typeof rawDraft.displayName === "string" &&
-      typeof rawDraft.location === "string" &&
-      isProfileInfoValid({ displayName: rawDraft.displayName, location: rawDraft.location });
+      isProfileInfoValid({ displayName: rawDraft.displayName });
     const storedAvatar =
       rawDraft?.avatar?.provider === "dicebear" &&
       typeof rawDraft.avatar?.style === "string" &&
@@ -170,7 +168,6 @@ export function ProfileProvider(props: { children: React.ReactNode }) {
     return JSON.stringify({
       displayName: draft.displayName,
       email: draft.email ?? null,
-      location: draft.location,
       intendedMajorId: draft.intendedMajorId,
       avatar: {
         provider: "dicebear",
@@ -186,14 +183,14 @@ export function ProfileProvider(props: { children: React.ReactNode }) {
     },
   ): boolean {
     // Avoid spamming on keystroke-style updates; we treat these as "commit-like":
-    // - profile basics saved together (displayName + location)
+    // - profile basics saved together (displayName + email)
     // - avatar randomize/cycle
     // - intended major selection
     const touchesAvatar = Boolean(partial.avatar);
     const touchesMajor = Object.prototype.hasOwnProperty.call(partial as any, "intendedMajorId");
     const touchesBasics =
-      Object.prototype.hasOwnProperty.call(partial as any, "displayName") &&
-      Object.prototype.hasOwnProperty.call(partial as any, "location");
+      Object.prototype.hasOwnProperty.call(partial as any, "displayName") ||
+      Object.prototype.hasOwnProperty.call(partial as any, "email");
     return touchesAvatar || touchesMajor || touchesBasics;
   }
 
@@ -256,7 +253,6 @@ export function ProfileProvider(props: { children: React.ReactNode }) {
             ...prev,
             displayName: serverProfile.displayName,
             email: serverProfile.email,
-            location: serverProfile.location,
             intendedMajorId: serverProfile.intendedMajorId as any,
             avatar: serverProfile.avatar ?? prev.avatar,
           });

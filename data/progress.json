@@ -48,17 +48,17 @@
     },
     {
       "userId": "69cdf4b6-496d-4b8d-aa6f-871eddc51b6c",
-      "currentStreak": 1,
-      "longestStreak": 1,
-      "totalPoints": 214,
-      "lastCorrectDate": "2026-02-07",
+      "currentStreak": 2,
+      "longestStreak": 2,
+      "totalPoints": 385,
+      "lastCorrectDate": "2026-02-08",
       "lastCompletion": {
-        "date": "2026-02-07",
-        "questionId": "q002",
-        "attemptsUsed": 3,
-        "pointsEarned": 40,
-        "completedAt": "2026-02-07T21:21:03.573Z",
-        "elapsedMs": 11888
+        "date": "2026-02-08",
+        "questionId": "q003",
+        "attemptsUsed": 1,
+        "pointsEarned": 171,
+        "completedAt": "2026-02-08T18:28:30.191Z",
+        "elapsedMs": 8971
       }
     },
     {

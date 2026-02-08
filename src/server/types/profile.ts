@@ -8,11 +8,9 @@ export type ProfileRecord = {
   username: string;
   displayName: string;
   email?: string;
-  location: string;
   intendedMajorId: string;
   avatar: ProfileAvatar;
   updatedAt: string; // ISO timestamp
 };
 
 export type ProfileUpsertInput = Omit<ProfileRecord, "username" | "updatedAt">;
-

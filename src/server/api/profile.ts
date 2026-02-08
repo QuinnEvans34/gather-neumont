@@ -38,9 +38,6 @@ function validateProfilePayload(
   const displayName = typeof payload.displayName === "string" ? payload.displayName.trim() : "";
   if (!displayName) return { ok: false, error: "displayName required" };
 
-  const location = typeof payload.location === "string" ? payload.location.trim() : "";
-  if (!location) return { ok: false, error: "location required" };
-
   const emailRaw = payload.email;
   const email = typeof emailRaw === "string" && emailRaw.trim().length > 0 ? emailRaw.trim() : undefined;
 
@@ -67,7 +64,6 @@ function validateProfilePayload(
     value: {
       displayName,
       email,
-      location,
       intendedMajorId,
       avatar: { provider: "dicebear", style, seed },
     },

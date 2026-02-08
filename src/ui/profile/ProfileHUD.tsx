@@ -166,10 +166,6 @@ export default function ProfileHUD() {
 
           <div style={{ marginTop: 12, display: "grid", gap: 8, fontSize: 12, lineHeight: 1.25 }}>
             <Row label="Username" value={username} />
-            <Row
-              label="Location"
-              value={draft.location?.trim() ? draft.location : "—"}
-            />
             <Row label="Intended Major" value={majorLabel || "—"} />
 
             <div

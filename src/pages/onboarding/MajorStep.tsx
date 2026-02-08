@@ -78,7 +78,6 @@ export default function MajorStep() {
               void putProfile({
                 displayName: nextDraft.displayName,
                 email: nextDraft.email,
-                location: nextDraft.location,
                 intendedMajorId: nextDraft.intendedMajorId,
                 avatar: {
                   provider: "dicebear",
