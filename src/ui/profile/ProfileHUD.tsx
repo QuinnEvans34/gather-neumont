@@ -202,7 +202,7 @@ export default function ProfileHUD() {
                 Edit account
               </button>
 
-              {auth.me?.username ? (
+              {auth.mode === "user" || auth.mode === "admin" || auth.mode === "guest" ? (
                 <button
                   type="button"
                   onClick={handleLogout}
@@ -220,7 +220,7 @@ export default function ProfileHUD() {
                     textAlign: "left",
                   }}
                 >
-                  Log out
+                  {auth.mode === "guest" ? "Exit guest mode" : "Log out"}
                 </button>
               ) : null}
 

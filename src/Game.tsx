@@ -29,7 +29,14 @@ function GamePage() {
     if (!game) return;
 
     const isOverlayRoute =
-      location.pathname === "/login" || location.pathname.startsWith("/onboarding");
+      location.pathname === "/login" ||
+      location.pathname === "/sign-in" ||
+      location.pathname === "/create-account" ||
+      location.pathname === "/admin" ||
+      location.pathname === "/onboarding" ||
+      location.pathname.startsWith("/onboarding/") ||
+      location.pathname === "/account" ||
+      location.pathname.startsWith("/account/");
     const enabled = !isOverlayRoute && !isDailyQuizOpen;
 
     const keyboard = (game as any).input?.keyboard as Phaser.Input.Keyboard.KeyboardPlugin | undefined;
