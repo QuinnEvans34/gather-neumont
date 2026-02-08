@@ -3,6 +3,7 @@ import { useLocation } from "react-router-dom";
 import Phaser from "phaser";
 import createGame from "./game.ts";
 import { appEvents } from "./events/appEvents";
+import { isOverlayRoute } from "./utils/overlayRoutes";
 
 function GamePage() {
   const gameRef = useRef<Phaser.Game | null>(null);
@@ -28,16 +29,8 @@ function GamePage() {
     const game = gameRef.current;
     if (!game) return;
 
-    const isOverlayRoute =
-      location.pathname === "/login" ||
-      location.pathname === "/sign-in" ||
-      location.pathname === "/create-account" ||
-      location.pathname === "/admin" ||
-      location.pathname === "/onboarding" ||
-      location.pathname.startsWith("/onboarding/") ||
-      location.pathname === "/account" ||
-      location.pathname.startsWith("/account/");
-    const enabled = !isOverlayRoute && !isDailyQuizOpen;
+    const isOverlayRouteActive = isOverlayRoute(location.pathname);
+    const enabled = !isOverlayRouteActive && !isDailyQuizOpen;
 
     const keyboard = (game as any).input?.keyboard as Phaser.Input.Keyboard.KeyboardPlugin | undefined;
     if (keyboard) {
