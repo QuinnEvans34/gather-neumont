@@ -1,10 +1,9 @@
-import type { FormEvent } from "react";
+import type { CSSProperties, FormEvent } from "react";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { putProfile } from "../../api/profileApi";
 import { useAuth } from "../../features/auth/AuthContext";
 import { useProfile } from "../../features/profile/ProfileContext";
-import "../../styles/auth-onboarding.css";
 
 export default function EditProfile() {
   const auth = useAuth();
@@ -12,11 +11,12 @@ export default function EditProfile() {
   const navigate = useNavigate();
 
   const [displayName, setDisplayName] = useState(profile.profileDraft.displayName);
+  const [locationText, setLocationText] = useState(profile.profileDraft.location);
   const [email, setEmail] = useState(profile.profileDraft.email ?? "");
 
   const canSave = useMemo(() => {
-    return displayName.trim().length > 0;
-  }, [displayName]);
+    return displayName.trim().length > 0 && locationText.trim().length > 0;
+  }, [displayName, locationText]);
 
   function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -25,11 +25,13 @@ export default function EditProfile() {
     const nextDraft = {
       ...profile.profileDraft,
       displayName: displayName.trim(),
+      location: locationText.trim(),
       email: email.trim() ? email.trim() : undefined,
     };
 
     profile.setProfileDraft({
       displayName: nextDraft.displayName,
+      location: nextDraft.location,
       email: nextDraft.email,
     });
 
@@ -37,6 +39,7 @@ export default function EditProfile() {
       void putProfile({
         displayName: nextDraft.displayName,
         email: nextDraft.email,
+        location: nextDraft.location,
         intendedMajorId: nextDraft.intendedMajorId,
         avatar: {
           provider: "dicebear",
@@ -51,52 +54,83 @@ export default function EditProfile() {
     navigate("/account");
   }
 
-  return (
-    <div className="account-overlay">
-      <div className="account-container">
-        <h1 className="account-heading">Edit Profile</h1>
-        <p className="account-description">
-          Update your display name and email address.
-        </p>
+  const inputStyle: CSSProperties = {
+    width: "100%",
+    padding: "10px 12px",
+    borderRadius: 10,
+    border: "1px solid rgba(255, 255, 255, 0.18)",
+    background: "rgba(0, 0, 0, 0.25)",
+    color: "inherit",
+    outline: "none",
+  };
 
-        <form onSubmit={onSubmit} className="account-form">
-          <div className="form-field">
-            <label htmlFor="displayName" className="form-label">Display name</label>
+  return (
+    <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
+      <div style={{ maxWidth: 520, width: "min(520px, calc(100vw - 48px))", padding: 24 }}>
+        <h1 style={{ margin: 0 }}>Edit Profile</h1>
+        <p style={{ marginTop: 8, opacity: 0.9 }}>Update your profile details.</p>
+
+        <form onSubmit={onSubmit} style={{ marginTop: 16, display: "grid", gap: 12 }}>
+          <label style={{ display: "grid", gap: 6 }}>
+            <div style={{ fontSize: 14, opacity: 0.9 }}>Display name</div>
             <input
-              id="displayName"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="Alex"
-              className="form-input"
+              style={inputStyle}
             />
-          </div>
+          </label>
 
-          <div className="form-field">
-            <label htmlFor="email" className="form-label">Email (optional)</label>
+          <label style={{ display: "grid", gap: 6 }}>
+            <div style={{ fontSize: 14, opacity: 0.9 }}>Location</div>
             <input
-              id="email"
-              type="email"
+              value={locationText}
+              onChange={(e) => setLocationText(e.target.value)}
+              placeholder="Salt Lake City, UT"
+              style={inputStyle}
+            />
+          </label>
+
+          <label style={{ display: "grid", gap: 6 }}>
+            <div style={{ fontSize: 14, opacity: 0.9 }}>Email (optional)</div>
+            <input
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="alex@example.com"
               autoComplete="email"
-              className="form-input"
+              style={inputStyle}
             />
-          </div>
+          </label>
 
-          <div className="account-actions">
+          <div style={{ marginTop: 4, display: "grid", gap: 10 }}>
             <button
               type="submit"
               disabled={!canSave}
-              className="btn btn-primary"
+              style={{
+                padding: "10px 12px",
+                borderRadius: 10,
+                border: "1px solid rgba(255, 255, 255, 0.18)",
+                background: canSave ? "rgba(255, 255, 255, 0.12)" : "rgba(255, 255, 255, 0.06)",
+                color: "inherit",
+                cursor: canSave ? "pointer" : "not-allowed",
+                fontWeight: 800,
+              }}
             >
-              Save Changes
+              Save
             </button>
 
             <button
               type="button"
               onClick={() => navigate("/account")}
-              className="btn btn-secondary"
+              style={{
+                padding: "10px 12px",
+                borderRadius: 10,
+                border: "1px solid rgba(255, 255, 255, 0.18)",
+                background: "rgba(255, 255, 255, 0.06)",
+                color: "inherit",
+                cursor: "pointer",
+                fontWeight: 700,
+              }}
             >
               Cancel
             </button>
@@ -106,3 +140,4 @@ export default function EditProfile() {
     </div>
   );
 }
+

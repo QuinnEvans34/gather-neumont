@@ -4,29 +4,17 @@ import { useAuth } from "../../features/auth/AuthContext";
 import { useProfile } from "../../features/profile/ProfileContext";
 import { createAvatar } from "@dicebear/core";
 import { DICEBEAR_STYLE_LABELS, DICEBEAR_STYLES, type DicebearStyleId } from "../../avatars/dicebear_registry";
+import { AVATAR_STYLE_ORDER, getNextStyle } from "../../avatars/styleList";
 import { randomSeed } from "../../utils/random";
-
-function styleIds(): DicebearStyleId[] {
-  return Object.keys(DICEBEAR_STYLES) as DicebearStyleId[];
-}
-
-function firstStyle(): DicebearStyleId {
-  return styleIds()[0] ?? ("pixelArt" as DicebearStyleId);
-}
-
-function nextStyle(current: DicebearStyleId): DicebearStyleId {
-  const ids = styleIds();
-  if (ids.length === 0) return current;
-  const idx = ids.indexOf(current);
-  return ids[(idx + 1) % ids.length] ?? ids[0]!;
-}
 
 export default function AvatarStep() {
   const auth = useAuth();
   const profile = useProfile();
   const navigate = useNavigate();
 
-  const style = profile.profileDraft.avatar.style ?? firstStyle();
+  const draftStyle = profile.profileDraft.avatar.style as DicebearStyleId | undefined;
+  const style =
+    draftStyle && AVATAR_STYLE_ORDER.includes(draftStyle) ? draftStyle : (AVATAR_STYLE_ORDER[0]! as DicebearStyleId);
   const seed = profile.profileDraft.avatar.seed;
 
   const svg = createAvatar(DICEBEAR_STYLES[style], { seed }).toString();
@@ -54,6 +42,13 @@ export default function AvatarStep() {
           />
         </div>
 
+        <p style={{ marginTop: 10, fontSize: 13, opacity: 0.9 }}>
+          Style:{" "}
+          <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>
+            {style}
+          </span>
+        </p>
+
         <p style={{ marginTop: 12, fontSize: 13, opacity: 0.85 }}>
           Seed:{" "}
           <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>
@@ -62,26 +57,57 @@ export default function AvatarStep() {
         </p>
 
         <div style={{ marginTop: 16, display: "grid", gap: 10 }}>
-          <button
-            onClick={() =>
-              profile.setProfileDraft({
-                avatar: {
-                  style: nextStyle(style),
-                  seed: randomSeed(),
-                },
-              })
-            }
-            style={{
-              padding: "10px 12px",
-              borderRadius: 10,
-              border: "1px solid rgba(255, 255, 255, 0.18)",
-              background: "rgba(255, 255, 255, 0.06)",
-              color: "inherit",
-              cursor: "pointer",
-            }}
-          >
-            Randomize
-          </button>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+            <button
+              onClick={() => {
+                const prevStyle = getNextStyle(style, -1);
+                profile.setProfileDraft({ avatar: { style: prevStyle } });
+              }}
+              style={{
+                padding: "10px 12px",
+                borderRadius: 10,
+                border: "1px solid rgba(255, 255, 255, 0.18)",
+                background: "rgba(255, 255, 255, 0.06)",
+                color: "inherit",
+                cursor: "pointer",
+              }}
+            >
+              Previous
+            </button>
+
+            <button
+              onClick={() => {
+                const nextStyle = getNextStyle(style, +1);
+                profile.setProfileDraft({ avatar: { style: nextStyle } });
+              }}
+              style={{
+                padding: "10px 12px",
+                borderRadius: 10,
+                border: "1px solid rgba(255, 255, 255, 0.18)",
+                background: "rgba(255, 255, 255, 0.06)",
+                color: "inherit",
+                cursor: "pointer",
+              }}
+            >
+              Next
+            </button>
+
+            <button
+              onClick={() => {
+                profile.setProfileDraft({ avatar: { seed: randomSeed() } });
+              }}
+              style={{
+                padding: "10px 12px",
+                borderRadius: 10,
+                border: "1px solid rgba(255, 255, 255, 0.18)",
+                background: "rgba(255, 255, 255, 0.06)",
+                color: "inherit",
+                cursor: "pointer",
+              }}
+            >
+              New Seed
+            </button>
+          </div>
 
           <button
             onClick={async () => {

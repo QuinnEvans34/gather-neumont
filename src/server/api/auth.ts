@@ -4,7 +4,10 @@ import {
   getUserById,
   getUserByUsername,
 } from "../data/users.store";
-import { getByUsername as getProfileByUsername } from "../data/profile.store";
+import {
+  getByUsername as getProfileByUsername,
+  upsertByUsername as upsertProfileByUsername,
+} from "../data/profile.store";
 import {
   buildSessionCookie,
   clearSessionCookie,
@@ -78,6 +81,15 @@ async function handleLogin(req: Request): Promise<Response> {
   }
 
   user = await ensureAdminFlag(user);
+  if (user.username.toLowerCase() === "admin") {
+    upsertProfileByUsername(user.username, {
+      displayName: "Admin",
+      location: "Neumont",
+      email: undefined,
+      intendedMajorId: "UNDECIDED",
+      avatar: { provider: "dicebear", style: "pixelArt", seed: "admin" },
+    });
+  }
   const token = createSession(user.id);
   return jsonWithCookie(
     { user: { id: user.id, username: user.username, isAdmin: !!user.isAdmin }, created },

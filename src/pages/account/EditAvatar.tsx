@@ -1,80 +1,97 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { putProfile } from "../../api/profileApi";
 import { createAvatar } from "@dicebear/core";
 import { DICEBEAR_STYLE_LABELS, DICEBEAR_STYLES, type DicebearStyleId } from "../../avatars/dicebear_registry";
 import { AVATAR_STYLE_ORDER, getNextStyle } from "../../avatars/styleList";
 import { randomSeed } from "../../utils/random";
+import { useAuth } from "../../features/auth/AuthContext";
 import { useProfile } from "../../features/profile/ProfileContext";
-import "../../styles/auth-onboarding.css";
 
 export default function EditAvatar() {
+  const auth = useAuth();
   const profile = useProfile();
   const navigate = useNavigate();
 
-  const initialDraftStyle = profile.profileDraft.avatar.style as DicebearStyleId | undefined;
-  const initialStyle =
-    initialDraftStyle && AVATAR_STYLE_ORDER.includes(initialDraftStyle)
-      ? initialDraftStyle
-      : (AVATAR_STYLE_ORDER[0]! as DicebearStyleId);
-
-  const [style, setStyle] = useState<DicebearStyleId>(initialStyle);
-  const [seed, setSeed] = useState(profile.profileDraft.avatar.seed);
-  const baseSeedRef = useRef(seed);
-  const [, setSeedOffset] = useState(0);
+  const draftStyle = profile.profileDraft.avatar.style as DicebearStyleId | undefined;
+  const style =
+    draftStyle && AVATAR_STYLE_ORDER.includes(draftStyle) ? draftStyle : (AVATAR_STYLE_ORDER[0]! as DicebearStyleId);
+  const seed = profile.profileDraft.avatar.seed;
 
   const svg = useMemo(() => createAvatar(DICEBEAR_STYLES[style], { seed }).toString(), [seed, style]);
   const dataUrl = "data:image/svg+xml;utf8," + encodeURIComponent(svg);
   const styleLabel = DICEBEAR_STYLE_LABELS[style] ?? style;
 
-  function handleSave() {
-    profile.setProfileDraft({ avatar: { style, seed } });
+  async function handleSave() {
+    if (auth.mode === "user" || auth.mode === "admin") {
+      const nextDraft = { ...profile.profileDraft };
+      void putProfile({
+        displayName: nextDraft.displayName,
+        email: nextDraft.email,
+        location: nextDraft.location,
+        intendedMajorId: nextDraft.intendedMajorId,
+        avatar: {
+          provider: "dicebear",
+          style: String(nextDraft.avatar.style),
+          seed: String(nextDraft.avatar.seed),
+        },
+      }).catch(() => {
+        // Non-blocking: ignore errors and return to hub.
+      });
+    }
     navigate("/account");
   }
 
   return (
-    <div className="account-overlay">
-      <div className="account-container">
-        <h1 className="account-heading">Edit Avatar</h1>
-        <p className="account-description">
-          Customize your avatar. Style: {styleLabel}
-        </p>
+    <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
+      <div style={{ maxWidth: 520, width: "min(520px, calc(100vw - 48px))", padding: 24 }}>
+        <h1 style={{ margin: 0 }}>Edit Avatar</h1>
+        <p style={{ marginTop: 8, opacity: 0.9 }}>DiceBear preview ({styleLabel})</p>
 
-        <div className="avatar-preview-wrapper">
+        <div style={{ marginTop: 12, display: "flex", justifyContent: "center" }}>
           <img
             src={dataUrl}
             alt="Avatar preview"
-            className="avatar-preview"
+            style={{
+              width: 120,
+              height: 120,
+              imageRendering: "pixelated",
+              background: "rgba(0, 0, 0, 0.18)",
+              borderRadius: 16,
+              border: "1px solid rgba(255, 255, 255, 0.12)",
+            }}
           />
-
-          <div className="avatar-info">
-            <div className="avatar-info-label">Style</div>
-            <div className="avatar-info-value">{style}</div>
-          </div>
-
-          <div className="avatar-info">
-            <div className="avatar-info-label">Seed</div>
-            <div className="avatar-info-value">{seed}</div>
-          </div>
         </div>
 
-        <div className="account-actions" style={{ marginTop: 20 }}>
-          <div className="button-group-inline">
+        <p style={{ marginTop: 10, fontSize: 13, opacity: 0.9 }}>
+          Style:{" "}
+          <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>{style}</span>
+        </p>
+
+        <p style={{ marginTop: 12, fontSize: 13, opacity: 0.85 }}>
+          Seed:{" "}
+          <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>
+            {seed}
+          </span>
+        </p>
+
+        <div style={{ marginTop: 16, display: "grid", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
             <button
               type="button"
               onClick={() => {
-                if (AVATAR_STYLE_ORDER.length > 1) {
-                  const prevStyle = getNextStyle(style, -1);
-                  setStyle(prevStyle);
-                  return;
-                }
-                setSeedOffset((prev) => {
-                  const next = prev - 1;
-                  const newSeed = `${baseSeedRef.current}:${next}`;
-                  setSeed(newSeed);
-                  return next;
-                });
+                const prevStyle = getNextStyle(style, -1);
+                profile.setProfileDraft({ avatar: { style: prevStyle } });
               }}
-              className="btn btn-secondary"
+              style={{
+                padding: "10px 12px",
+                borderRadius: 10,
+                border: "1px solid rgba(255, 255, 255, 0.18)",
+                background: "rgba(255, 255, 255, 0.06)",
+                color: "inherit",
+                cursor: "pointer",
+                fontWeight: 700,
+              }}
             >
               Previous
             </button>
@@ -82,19 +99,18 @@ export default function EditAvatar() {
             <button
               type="button"
               onClick={() => {
-                if (AVATAR_STYLE_ORDER.length > 1) {
-                  const nextStyle = getNextStyle(style, +1);
-                  setStyle(nextStyle);
-                  return;
-                }
-                setSeedOffset((prev) => {
-                  const next = prev + 1;
-                  const newSeed = `${baseSeedRef.current}:${next}`;
-                  setSeed(newSeed);
-                  return next;
-                });
+                const nextStyle = getNextStyle(style, +1);
+                profile.setProfileDraft({ avatar: { style: nextStyle } });
               }}
-              className="btn btn-secondary"
+              style={{
+                padding: "10px 12px",
+                borderRadius: 10,
+                border: "1px solid rgba(255, 255, 255, 0.18)",
+                background: "rgba(255, 255, 255, 0.06)",
+                color: "inherit",
+                cursor: "pointer",
+                fontWeight: 700,
+              }}
             >
               Next
             </button>
@@ -102,12 +118,17 @@ export default function EditAvatar() {
             <button
               type="button"
               onClick={() => {
-                const next = randomSeed();
-                baseSeedRef.current = next;
-                setSeedOffset(0);
-                setSeed(next);
+                profile.setProfileDraft({ avatar: { seed: randomSeed() } });
               }}
-              className="btn btn-secondary"
+              style={{
+                padding: "10px 12px",
+                borderRadius: 10,
+                border: "1px solid rgba(255, 255, 255, 0.18)",
+                background: "rgba(255, 255, 255, 0.06)",
+                color: "inherit",
+                cursor: "pointer",
+                fontWeight: 700,
+              }}
             >
               New Seed
             </button>
@@ -116,15 +137,31 @@ export default function EditAvatar() {
           <button
             type="button"
             onClick={handleSave}
-            className="btn btn-primary"
+            style={{
+              padding: "10px 12px",
+              borderRadius: 10,
+              border: "1px solid rgba(255, 255, 255, 0.12)",
+              background: "rgba(255, 255, 255, 0.12)",
+              color: "inherit",
+              cursor: "pointer",
+              fontWeight: 800,
+            }}
           >
-            Save Changes
+            Save
           </button>
 
           <button
             type="button"
             onClick={() => navigate("/account")}
-            className="btn btn-secondary"
+            style={{
+              padding: "10px 12px",
+              borderRadius: 10,
+              border: "1px solid rgba(255, 255, 255, 0.18)",
+              background: "rgba(255, 255, 255, 0.06)",
+              color: "inherit",
+              cursor: "pointer",
+              fontWeight: 700,
+            }}
           >
             Cancel
           </button>

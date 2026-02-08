@@ -33,5 +33,27 @@
       "seed": "81e8ac3f-cd30-4f32-9100-16f0d3867c78"
     },
     "updatedAt": "2026-02-07T19:38:03.232Z"
+  },
+  "admin": {
+    "displayName": "Admin",
+    "location": "Neumont",
+    "intendedMajorId": "UNDECIDED",
+    "avatar": {
+      "provider": "dicebear",
+      "style": "pixelArt",
+      "seed": "admin"
+    },
+    "updatedAt": "2026-02-08T00:51:45.477Z"
+  },
+  "dsfafdsaf": {
+    "displayName": "asfdasdfa",
+    "location": "fadsdfsaf",
+    "intendedMajorId": "BSCS",
+    "avatar": {
+      "provider": "dicebear",
+      "style": "pixelArt",
+      "seed": "af001b23-1e49-4610-9c3d-9b4fdabb4703"
+    },
+    "updatedAt": "2026-02-08T00:52:57.265Z"
   }
 }

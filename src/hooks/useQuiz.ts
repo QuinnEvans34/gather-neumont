@@ -100,6 +100,15 @@ export function useQuiz(): UseQuizReturn {
   const [elapsedMs, setElapsedMs] = useState(0);
 
   useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        window.clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     const ticking =
       state === "active" || state === "incorrect" || state === "submitting";
     if (!ticking && intervalRef.current) {

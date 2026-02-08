@@ -1,21 +1,28 @@
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
 import QuizDevPage from "./pages/QuizDevPage.tsx";
 import OverlayLayout from "./ui/OverlayLayout.tsx";
 import { useAuth } from "./features/auth/AuthContext.tsx";
-import LoginPage from "./pages/LoginPage";
 import OnboardingLanding from "./pages/onboarding/Landing";
 import ProfileStep from "./pages/onboarding/ProfileStep";
 import AvatarStep from "./pages/onboarding/AvatarStep";
 import MajorStep from "./pages/onboarding/MajorStep";
 import SignInPage from "./pages/SignInPage";
 import CreateAccountPage from "./pages/CreateAccountPage";
+import AccountHub from "./pages/account/AccountHub";
+import EditProfile from "./pages/account/EditProfile";
+import EditMajor from "./pages/account/EditMajor";
+import EditAvatar from "./pages/account/EditAvatar";
 
 import "./index.css";
 
 function OnboardingGuard() {
   const auth = useAuth();
+  const location = useLocation();
+  const pathname = location.pathname;
+  const isAccountRoute = pathname === "/account" || pathname.startsWith("/account/");
 
   if ((auth.mode === "user" || auth.mode === "admin") && auth.profileComplete === false) {
+    if (isAccountRoute) return <Outlet />;
     return <Navigate to="/onboarding/profile" replace />;
   }
 
@@ -59,6 +66,12 @@ export function App() {
 
           <Route element={<OnboardingGuard />}>
             <Route index element={<GameIndex />} />
+            <Route path="account" element={<Outlet />}>
+              <Route index element={<AccountHub />} />
+              <Route path="profile" element={<EditProfile />} />
+              <Route path="major" element={<EditMajor />} />
+              <Route path="avatar" element={<EditAvatar />} />
+            </Route>
             <Route path="admin" element={<AdminPage />} />
             <Route path="dev/quiz" element={<QuizDevPage />} />
           </Route>

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../../features/auth/AuthContext";
 import { QuizModal } from "../../components/quiz/QuizModal";
 import { DEMO_LEADERBOARD } from "../../demo/demoLeaderboard";
@@ -22,17 +22,6 @@ export default function QuizPanel(props: { isOpen: boolean; onClose: () => void 
   const isAdmin = auth.mode === "admin";
   const username = auth.me?.username ?? "Guest";
 
-  // Debug: Log when isOpen prop changes
-  useEffect(() => {
-    console.log(`[QuizPanel] 🎮 isOpen prop changed to: ${isOpen}`);
-    if (isOpen) {
-      console.log(`[QuizPanel] 📂 Panel opening - initializing component`);
-      console.log(`[QuizPanel] 👤 User: ${username} (${isAdmin ? 'Admin' : 'Player'})`);
-    } else {
-      console.log(`[QuizPanel] 📁 Panel closing - component will unmount`);
-    }
-  }, [isOpen, username, isAdmin]);
-
   const [tab, setTab] = useState<Tab>("quiz");
   const panelRef = useRef<HTMLDivElement | null>(null);
   const quizModalCloseRef = useRef<null | (() => void)>(null);
@@ -53,32 +42,23 @@ export default function QuizPanel(props: { isOpen: boolean; onClose: () => void 
   const rankAnimKeyRef = useRef<string | null>(null);
 
   const handleClose = useCallback(() => {
-    console.log(`[QuizPanel] 🚪 Close requested`);
     if (quizModalCloseRef.current) {
-      console.log(`[QuizPanel] 🔄 Delegating close to QuizModal`);
       quizModalCloseRef.current();
       return;
     }
-    console.log(`[QuizPanel] ✅ Closing panel directly`);
     onClose();
   }, [onClose]);
 
   useEffect(() => {
     if (!isOpen) return;
-    console.log(`[QuizPanel] 🔄 Resetting tab to 'quiz' on panel open`);
     setTab("quiz");
   }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
 
-    console.log(`[QuizPanel] ⌨️ Setting up keyboard and click-outside listeners`);
-
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        console.log(`[QuizPanel] ⎋ Escape key pressed - closing panel`);
-        handleClose();
-      }
+      if (e.key === "Escape") handleClose();
     }
 
     function onPointerDown(e: PointerEvent) {
@@ -87,14 +67,12 @@ export default function QuizPanel(props: { isOpen: boolean; onClose: () => void 
       const panel = panelRef.current;
       if (!panel) return;
       if (panel.contains(target)) return;
-      console.log(`[QuizPanel] 🖱️ Click outside panel detected - closing`);
       handleClose();
     }
 
     window.addEventListener("keydown", onKeyDown);
     document.addEventListener("pointerdown", onPointerDown, true);
     return () => {
-      console.log(`[QuizPanel] 🧹 Cleaning up keyboard and click-outside listeners`);
       window.removeEventListener("keydown", onKeyDown);
       document.removeEventListener("pointerdown", onPointerDown, true);
     };
@@ -546,17 +524,18 @@ export default function QuizPanel(props: { isOpen: boolean; onClose: () => void 
                             auth.me?.username?.toLowerCase() === entry.username.toLowerCase();
                           const showDivider =
                             index > 0 && (index === 3 || index === 10 || index % 10 === 0);
-                          const rowKey = `${entry.rank}-${entry.username}`;
                           return (
-                            <Fragment key={rowKey}>
+                            <>
                               {showDivider && (
                                 <div
                                   className="lb-table-divider"
+                                  key={`divider-${index}`}
                                 ></div>
                               )}
                               <div
                                 className={`lb-table-row ${isMe ? "lb-table-row--me" : ""}`}
                                 data-username={entry.username.toLowerCase()}
+                                key={`${entry.rank}-${entry.username}`}
                                 role="row"
                               >
                                 <span className="lb-table-rank">
@@ -571,7 +550,7 @@ export default function QuizPanel(props: { isOpen: boolean; onClose: () => void 
                                 <span className="lb-table-streak">{entry.longestStreak}</span>
                                 <span className="lb-table-points">{entry.totalPoints}</span>
                               </div>
-                            </Fragment>
+                            </>
                           );
                         })}
                       </div>
