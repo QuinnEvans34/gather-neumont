@@ -5,6 +5,7 @@ import { useAuth } from "../features/auth/AuthContext";
 import ProfileHUD from "./profile/ProfileHUD";
 import QuizPanel from "./quiz/QuizPanel";
 import { appEvents } from "../events/appEvents";
+import { isOverlayRoute } from "../utils/overlayRoutes";
 import "../styles/quiz-ui.css";
 
 export default function OverlayLayout() {
@@ -13,15 +14,7 @@ export default function OverlayLayout() {
   const outlet = useOutlet();
   const [isDailyQuizOpen, setIsDailyQuizOpen] = useState(false);
   const pathname = location.pathname;
-  const isOverlayVisible =
-    pathname === "/sign-in" ||
-    pathname === "/create-account" ||
-    pathname === "/login" ||
-    pathname === "/admin" ||
-    pathname === "/onboarding" ||
-    pathname.startsWith("/onboarding/") ||
-    pathname === "/account" ||
-    pathname.startsWith("/account/");
+  const isOverlayVisible = isOverlayRoute(pathname);
   const overlayRootRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {

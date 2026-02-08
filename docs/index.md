@@ -15,6 +15,7 @@ routes/panels on top of the game.
 - [Diagram: system architecture](diagrams/system-architecture.md)
 - [Diagram: UI map](diagrams/ui-map.md)
 - [Diagram: data flow](diagrams/data-flow.md)
+- [Presentation (5-minute summary)](presentation.md)
 - [Note: assets audit](assets_audit.md)
 - [Note: avatars](avatars.md)
 - [Note: onboarding/login](onboarding_login.md)
