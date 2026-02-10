@@ -7,6 +7,7 @@ import { createAvatar } from "@dicebear/core";
 import { DICEBEAR_STYLE_LABELS, DICEBEAR_STYLES, type DicebearStyleId } from "../../avatars/dicebear_registry";
 import { AVATAR_STYLE_ORDER, getNextStyle } from "../../avatars/styleList";
 import { randomSeed } from "../../utils/random";
+import "../../styles/auth-onboarding.css";
 
 export default function AvatarStep() {
   const auth = useAuth();
@@ -26,43 +27,35 @@ export default function AvatarStep() {
   const styleLabel = DICEBEAR_STYLE_LABELS[style] ?? style;
 
   return (
-    <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
-      <div style={{ maxWidth: 520, padding: 24 }}>
-        <h1>Avatar</h1>
-        <p style={{ marginTop: 8, opacity: 0.9 }}>DiceBear preview ({styleLabel})</p>
+    <div className="onboarding-overlay">
+      <div className="onboarding-container">
+        <h1 className="onboarding-heading">Choose Your Avatar</h1>
+        <p className="onboarding-description">
+          Pick an avatar style that represents you. Style: {styleLabel}
+        </p>
 
-        <div style={{ marginTop: 12, display: "flex", justifyContent: "center" }}>
+        <div className="avatar-preview-wrapper">
           <img
             src={dataUrl}
             alt="Avatar preview"
-            style={{
-              width: 120,
-              height: 120,
-              imageRendering: "pixelated",
-              background: "rgba(0, 0, 0, 0.18)",
-              borderRadius: 16,
-              border: "1px solid rgba(255, 255, 255, 0.12)",
-            }}
+            className="avatar-preview"
           />
+          
+          <div className="avatar-info">
+            <div className="avatar-info-label">Style</div>
+            <div className="avatar-info-value">{style}</div>
+          </div>
+          
+          <div className="avatar-info">
+            <div className="avatar-info-label">Seed</div>
+            <div className="avatar-info-value">{seed}</div>
+          </div>
         </div>
 
-        <p style={{ marginTop: 10, fontSize: 13, opacity: 0.9 }}>
-          Style:{" "}
-          <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>
-            {style}
-          </span>
-        </p>
-
-        <p style={{ marginTop: 12, fontSize: 13, opacity: 0.85 }}>
-          Seed:{" "}
-          <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>
-            {seed}
-          </span>
-        </p>
-
-        <div style={{ marginTop: 16, display: "grid", gap: 10 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+        <div className="button-group" style={{ marginTop: 20 }}>
+          <div className="button-group-inline">
             <button
+              type="button"
               onClick={() => {
                 if (AVATAR_STYLE_ORDER.length > 1) {
                   const prevStyle = getNextStyle(style, -1);
@@ -76,19 +69,13 @@ export default function AvatarStep() {
                   return next;
                 });
               }}
-              style={{
-                padding: "10px 12px",
-                borderRadius: 10,
-                border: "1px solid rgba(255, 255, 255, 0.18)",
-                background: "rgba(255, 255, 255, 0.06)",
-                color: "inherit",
-                cursor: "pointer",
-              }}
+              className="btn btn-secondary"
             >
               Previous
             </button>
 
             <button
+              type="button"
               onClick={() => {
                 if (AVATAR_STYLE_ORDER.length > 1) {
                   const nextStyle = getNextStyle(style, +1);
@@ -102,39 +89,27 @@ export default function AvatarStep() {
                   return next;
                 });
               }}
-              style={{
-                padding: "10px 12px",
-                borderRadius: 10,
-                border: "1px solid rgba(255, 255, 255, 0.18)",
-                background: "rgba(255, 255, 255, 0.06)",
-                color: "inherit",
-                cursor: "pointer",
-              }}
+              className="btn btn-secondary"
             >
               Next
             </button>
 
             <button
+              type="button"
               onClick={() => {
                 const next = randomSeed();
                 baseSeedRef.current = next;
                 setSeedOffset(0);
                 profile.setProfileDraft({ avatar: { seed: next } });
               }}
-              style={{
-                padding: "10px 12px",
-                borderRadius: 10,
-                border: "1px solid rgba(255, 255, 255, 0.18)",
-                background: "rgba(255, 255, 255, 0.06)",
-                color: "inherit",
-                cursor: "pointer",
-              }}
+              className="btn btn-secondary"
             >
               New Seed
             </button>
           </div>
 
           <button
+            type="button"
             onClick={async () => {
               if (!profile.hasProfileBasics()) {
                 navigate("/onboarding/profile");
@@ -157,14 +132,7 @@ export default function AvatarStep() {
 
               navigate("/onboarding/major");
             }}
-            style={{
-              padding: "10px 12px",
-              borderRadius: 10,
-              border: "1px solid rgba(255, 255, 255, 0.12)",
-              background: "rgba(255, 255, 255, 0.12)",
-              color: "inherit",
-              cursor: "pointer",
-            }}
+            className="btn btn-primary"
           >
             Continue
           </button>

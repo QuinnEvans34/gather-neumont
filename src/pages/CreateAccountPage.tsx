@@ -1,9 +1,10 @@
 import type { FormEvent } from "react";
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../features/auth/AuthContext";
 import { useProfile } from "../features/profile/ProfileContext";
 import { profileStorage } from "../features/profile/profileStorage";
+import "../styles/auth-onboarding.css";
 
 async function fetchUsernameExists(username: string): Promise<boolean> {
   const trimmed = username.trim();
@@ -71,52 +72,47 @@ export default function CreateAccountPage() {
   }
 
   return (
-    <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
-      <div style={{ maxWidth: 520, padding: 24 }}>
-        <h1>Create account</h1>
-        <p style={{ marginTop: 8, opacity: 0.9 }}>
-          Choose a username to create an account.
+    <div className="auth-overlay">
+      <div className="auth-container">
+        <h1 className="auth-heading">Create account</h1>
+        <p className="auth-description">
+          Choose a username to create your account.
         </p>
 
-        <form onSubmit={onSubmit} style={{ marginTop: 16, display: "grid", gap: 12 }}>
-          <label style={{ display: "grid", gap: 6 }}>
-            <div style={{ fontSize: 14, opacity: 0.9 }}>Username</div>
+        <form onSubmit={onSubmit} className="auth-form">
+          <div className="form-field">
+            <label htmlFor="username" className="form-label">Username</label>
             <input
+              id="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               placeholder="your_name"
               autoComplete="username"
-              style={{
-                width: "100%",
-                padding: "10px 12px",
-                borderRadius: 10,
-                border: "1px solid rgba(255, 255, 255, 0.18)",
-                background: "rgba(0, 0, 0, 0.25)",
-                color: "inherit",
-                outline: "none",
-              }}
+              className="form-input"
             />
-          </label>
+          </div>
 
-          {error ? (
-            <div style={{ fontSize: 13, color: "#ffb4b4", opacity: 0.95 }}>{error}</div>
-          ) : null}
+          {error && (
+            <div className="form-error">{error}</div>
+          )}
 
           <button
             type="submit"
             disabled={!canSubmit}
-            style={{
-              padding: "10px 12px",
-              borderRadius: 10,
-              border: "1px solid rgba(255, 255, 255, 0.18)",
-              background: canSubmit ? "rgba(255, 255, 255, 0.12)" : "rgba(255, 255, 255, 0.06)",
-              color: "inherit",
-              cursor: canSubmit ? "pointer" : "not-allowed",
-            }}
+            className={`btn btn-primary ${isSubmitting ? "is-loading" : ""}`}
           >
             {isSubmitting ? "Creating..." : "Create account"}
           </button>
         </form>
+
+        <div className="auth-footer">
+          <p className="auth-link">
+            Already have an account?{" "}
+            <Link to="/sign-in" className="auth-link-button">
+              Sign in
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );

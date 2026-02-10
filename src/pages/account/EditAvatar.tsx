@@ -7,6 +7,7 @@ import { AVATAR_STYLE_ORDER, getNextStyle } from "../../avatars/styleList";
 import { randomSeed } from "../../utils/random";
 import { useAuth } from "../../features/auth/AuthContext";
 import { useProfile } from "../../features/profile/ProfileContext";
+import "../../styles/auth-onboarding.css";
 
 export default function EditAvatar() {
   const auth = useAuth();
@@ -45,40 +46,33 @@ export default function EditAvatar() {
   }
 
   return (
-    <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
-      <div style={{ maxWidth: 520, width: "min(520px, calc(100vw - 48px))", padding: 24 }}>
-        <h1 style={{ margin: 0 }}>Edit Avatar</h1>
-        <p style={{ marginTop: 8, opacity: 0.9 }}>DiceBear preview ({styleLabel})</p>
+    <div className="account-overlay">
+      <div className="account-container">
+        <h1 className="account-heading">Edit Avatar</h1>
+        <p className="account-description">
+          Customize your avatar. Style: {styleLabel}
+        </p>
 
-        <div style={{ marginTop: 12, display: "flex", justifyContent: "center" }}>
+        <div className="avatar-preview-wrapper">
           <img
             src={dataUrl}
             alt="Avatar preview"
-            style={{
-              width: 120,
-              height: 120,
-              imageRendering: "pixelated",
-              background: "rgba(0, 0, 0, 0.18)",
-              borderRadius: 16,
-              border: "1px solid rgba(255, 255, 255, 0.12)",
-            }}
+            className="avatar-preview"
           />
+
+          <div className="avatar-info">
+            <div className="avatar-info-label">Style</div>
+            <div className="avatar-info-value">{style}</div>
+          </div>
+
+          <div className="avatar-info">
+            <div className="avatar-info-label">Seed</div>
+            <div className="avatar-info-value">{seed}</div>
+          </div>
         </div>
 
-        <p style={{ marginTop: 10, fontSize: 13, opacity: 0.9 }}>
-          Style:{" "}
-          <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>{style}</span>
-        </p>
-
-        <p style={{ marginTop: 12, fontSize: 13, opacity: 0.85 }}>
-          Seed:{" "}
-          <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>
-            {seed}
-          </span>
-        </p>
-
-        <div style={{ marginTop: 16, display: "grid", gap: 10 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+        <div className="account-actions" style={{ marginTop: 20 }}>
+          <div className="button-group-inline">
             <button
               type="button"
               onClick={() => {
@@ -94,15 +88,7 @@ export default function EditAvatar() {
                   return next;
                 });
               }}
-              style={{
-                padding: "10px 12px",
-                borderRadius: 10,
-                border: "1px solid rgba(255, 255, 255, 0.18)",
-                background: "rgba(255, 255, 255, 0.06)",
-                color: "inherit",
-                cursor: "pointer",
-                fontWeight: 700,
-              }}
+              className="btn btn-secondary"
             >
               Previous
             </button>
@@ -122,15 +108,7 @@ export default function EditAvatar() {
                   return next;
                 });
               }}
-              style={{
-                padding: "10px 12px",
-                borderRadius: 10,
-                border: "1px solid rgba(255, 255, 255, 0.18)",
-                background: "rgba(255, 255, 255, 0.06)",
-                color: "inherit",
-                cursor: "pointer",
-                fontWeight: 700,
-              }}
+              className="btn btn-secondary"
             >
               Next
             </button>
@@ -143,15 +121,7 @@ export default function EditAvatar() {
                 setSeedOffset(0);
                 profile.setProfileDraft({ avatar: { seed: next } });
               }}
-              style={{
-                padding: "10px 12px",
-                borderRadius: 10,
-                border: "1px solid rgba(255, 255, 255, 0.18)",
-                background: "rgba(255, 255, 255, 0.06)",
-                color: "inherit",
-                cursor: "pointer",
-                fontWeight: 700,
-              }}
+              className="btn btn-secondary"
             >
               New Seed
             </button>
@@ -160,31 +130,15 @@ export default function EditAvatar() {
           <button
             type="button"
             onClick={handleSave}
-            style={{
-              padding: "10px 12px",
-              borderRadius: 10,
-              border: "1px solid rgba(255, 255, 255, 0.12)",
-              background: "rgba(255, 255, 255, 0.12)",
-              color: "inherit",
-              cursor: "pointer",
-              fontWeight: 800,
-            }}
+            className="btn btn-primary"
           >
-            Save
+            Save Changes
           </button>
 
           <button
             type="button"
             onClick={() => navigate("/account")}
-            style={{
-              padding: "10px 12px",
-              borderRadius: 10,
-              border: "1px solid rgba(255, 255, 255, 0.18)",
-              background: "rgba(255, 255, 255, 0.06)",
-              color: "inherit",
-              cursor: "pointer",
-              fontWeight: 700,
-            }}
+            className="btn btn-secondary"
           >
             Cancel
           </button>
