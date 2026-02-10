@@ -5,6 +5,7 @@ import { MAJORS } from "../../config/majors";
 import { DICEBEAR_STYLES } from "../../avatars/dicebear_registry";
 import { useAuth } from "../../features/auth/AuthContext";
 import { useProfile } from "../../features/profile/ProfileContext";
+import "../../styles/auth-onboarding.css";
 
 export default function ProfileHUD() {
   const auth = useAuth();
@@ -79,168 +80,82 @@ export default function ProfileHUD() {
   }, [open]);
 
   return (
-    <div
-      ref={containerRef}
-      style={{
-        position: "fixed",
-        top: 12,
-        right: 12,
-        zIndex: 60,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "flex-end",
-        gap: 8,
-        color: "rgba(255, 255, 255, 0.92)",
-        fontFamily:
-          "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Apple Color Emoji, Segoe UI Emoji",
-      }}
-    >
+    <div ref={containerRef} className="profile-hud">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="dialog"
         aria-expanded={open}
-        style={{
-          cursor: "pointer",
-          border: "1px solid rgba(255, 255, 255, 0.18)",
-          background: "rgba(0, 0, 0, 0.45)",
-          backdropFilter: "blur(6px)",
-          color: "rgba(255, 255, 255, 0.92)",
-          fontFamily: "inherit",
-          borderRadius: 999,
-          padding: "8px 12px",
-          display: "grid",
-          gap: 2,
-          textAlign: "left",
-          boxShadow: "0 10px 30px rgba(0,0,0,0.25)",
-        }}
+        className="profile-hud-toggle"
       >
-        <div style={{ fontSize: 12, lineHeight: 1.1, opacity: 0.85 }}>Profile</div>
-        <div style={{ fontSize: 13, lineHeight: 1.15, fontWeight: 600 }}>{username}</div>
+        <div className="profile-hud-toggle-label">Profile</div>
+        <div className="profile-hud-toggle-name">{username}</div>
       </button>
 
-      {open ? (
+      {open && (
         <div
           ref={popoverRef}
           tabIndex={-1}
           role="dialog"
           aria-label="Profile details"
-          style={{
-            width: 320,
-            maxWidth: "calc(100vw - 24px)",
-            borderRadius: 14,
-            border: "1px solid rgba(255, 255, 255, 0.18)",
-            background: "rgba(15, 15, 18, 0.92)",
-            backdropFilter: "blur(10px)",
-            boxShadow: "0 18px 60px rgba(0,0,0,0.45)",
-            padding: 12,
-            outline: "none",
-          }}
+          className="profile-hud-popover"
         >
-          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <div className="profile-hud-header">
             <div
               aria-hidden="true"
-              style={{
-                width: 48,
-                height: 48,
-                borderRadius: 12,
-                overflow: "hidden",
-                border: "1px solid rgba(255, 255, 255, 0.14)",
-                background: "rgba(255,255,255,0.06)",
-                flex: "0 0 auto",
-                display: "grid",
-                placeItems: "center",
-              }}
+              className="profile-hud-avatar"
               dangerouslySetInnerHTML={avatarSvg ? { __html: avatarSvg } : undefined}
             />
 
-            <div style={{ minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.15 }}>
+            <div className="profile-hud-user-info">
+              <div className="profile-hud-display-name">
                 {draft.displayName?.trim() ? draft.displayName : "—"}
               </div>
-              <div style={{ fontSize: 12, opacity: 0.85, marginTop: 3, lineHeight: 1.15 }}>
-                @{username}
-              </div>
+              <div className="profile-hud-username">@{username}</div>
             </div>
           </div>
 
-          <div style={{ marginTop: 12, display: "grid", gap: 8, fontSize: 12, lineHeight: 1.25 }}>
+          <div className="profile-hud-details">
             <Row label="Username" value={username} />
-            <Row label="Intended Major" value={majorLabel || "—"} />
+            <Row label="Major" value={majorLabel || "—"} />
+          </div>
 
-            <div
-              style={{
-                marginTop: 6,
-                paddingTop: 10,
-                borderTop: "1px solid rgba(255,255,255,0.12)",
-                display: "grid",
-                gap: 8,
-              }}
+          <div className="profile-hud-actions">
+            <button
+              type="button"
+              onClick={handleEditAccount}
+              className="profile-hud-btn primary"
             >
+              Edit account
+            </button>
+
+            {(auth.mode === "user" || auth.mode === "admin" || auth.mode === "guest") && (
               <button
                 type="button"
-                onClick={handleEditAccount}
-                style={{
-                  pointerEvents: "auto",
-                  cursor: "pointer",
-                  borderRadius: 10,
-                  border: "1px solid rgba(255, 255, 255, 0.18)",
-                  background: "rgba(255,255,255,0.06)",
-                  color: "rgba(255, 255, 255, 0.92)",
-                  padding: "8px 10px",
-                  fontFamily: "inherit",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  lineHeight: 1,
-                  textAlign: "left",
-                }}
+                onClick={handleLogout}
+                className="profile-hud-btn"
               >
-                Edit account
+                {auth.mode === "guest" ? "Exit guest mode" : "Log out"}
               </button>
+            )}
 
-              {auth.mode === "user" || auth.mode === "admin" || auth.mode === "guest" ? (
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  style={{
-                    cursor: "pointer",
-                    borderRadius: 10,
-                    border: "1px solid rgba(255, 255, 255, 0.18)",
-                    background: "rgba(255,255,255,0.06)",
-                    color: "rgba(255, 255, 255, 0.92)",
-                    padding: "8px 10px",
-                    fontFamily: "inherit",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    lineHeight: 1,
-                    textAlign: "left",
-                  }}
-                >
-                  {auth.mode === "guest" ? "Exit guest mode" : "Log out"}
-                </button>
-              ) : null}
-
-              {auth.mode === "guest" ? (
-                <div style={{ opacity: 0.9, fontSize: 12 }}>
-                  Guest — progress not saved
-                </div>
-              ) : null}
-            </div>
-
+            {auth.mode === "guest" && (
+              <div className="profile-hud-notice">
+                Guest mode — progress not saved
+              </div>
+            )}
           </div>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }
 
 function Row(props: { label: string; value: string }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "110px 1fr", gap: 10 }}>
-      <div style={{ opacity: 0.75 }}>{props.label}</div>
-      <div style={{ fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis" }}>
-        {props.value}
-      </div>
+    <div className="profile-hud-row">
+      <div className="profile-hud-row-label">{props.label}</div>
+      <div className="profile-hud-row-value">{props.value}</div>
     </div>
   );
 }

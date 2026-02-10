@@ -1,9 +1,10 @@
-import type { CSSProperties, FormEvent } from "react";
+import type { FormEvent } from "react";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { putProfile } from "../../api/profileApi";
 import { useAuth } from "../../features/auth/AuthContext";
 import { useProfile } from "../../features/profile/ProfileContext";
+import "../../styles/auth-onboarding.css";
 
 export default function EditProfile() {
   const auth = useAuth();
@@ -50,73 +51,52 @@ export default function EditProfile() {
     navigate("/account");
   }
 
-  const inputStyle: CSSProperties = {
-    width: "100%",
-    padding: "10px 12px",
-    borderRadius: 10,
-    border: "1px solid rgba(255, 255, 255, 0.18)",
-    background: "rgba(0, 0, 0, 0.25)",
-    color: "inherit",
-    outline: "none",
-  };
-
   return (
-    <div style={{ position: "absolute", inset: 0, display: "grid", placeItems: "center" }}>
-      <div style={{ maxWidth: 520, width: "min(520px, calc(100vw - 48px))", padding: 24 }}>
-        <h1 style={{ margin: 0 }}>Edit Profile</h1>
-        <p style={{ marginTop: 8, opacity: 0.9 }}>Update your profile details.</p>
+    <div className="account-overlay">
+      <div className="account-container">
+        <h1 className="account-heading">Edit Profile</h1>
+        <p className="account-description">
+          Update your display name and email address.
+        </p>
 
-        <form onSubmit={onSubmit} style={{ marginTop: 16, display: "grid", gap: 12 }}>
-          <label style={{ display: "grid", gap: 6 }}>
-            <div style={{ fontSize: 14, opacity: 0.9 }}>Display name</div>
+        <form onSubmit={onSubmit} className="account-form">
+          <div className="form-field">
+            <label htmlFor="displayName" className="form-label">Display name</label>
             <input
+              id="displayName"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="Alex"
-              style={inputStyle}
+              className="form-input"
             />
-          </label>
+          </div>
 
-          <label style={{ display: "grid", gap: 6 }}>
-            <div style={{ fontSize: 14, opacity: 0.9 }}>Email (optional)</div>
+          <div className="form-field">
+            <label htmlFor="email" className="form-label">Email (optional)</label>
             <input
+              id="email"
+              type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="alex@example.com"
               autoComplete="email"
-              style={inputStyle}
+              className="form-input"
             />
-          </label>
+          </div>
 
-          <div style={{ marginTop: 4, display: "grid", gap: 10 }}>
+          <div className="account-actions">
             <button
               type="submit"
               disabled={!canSave}
-              style={{
-                padding: "10px 12px",
-                borderRadius: 10,
-                border: "1px solid rgba(255, 255, 255, 0.18)",
-                background: canSave ? "rgba(255, 255, 255, 0.12)" : "rgba(255, 255, 255, 0.06)",
-                color: "inherit",
-                cursor: canSave ? "pointer" : "not-allowed",
-                fontWeight: 800,
-              }}
+              className="btn btn-primary"
             >
-              Save
+              Save Changes
             </button>
 
             <button
               type="button"
               onClick={() => navigate("/account")}
-              style={{
-                padding: "10px 12px",
-                borderRadius: 10,
-                border: "1px solid rgba(255, 255, 255, 0.18)",
-                background: "rgba(255, 255, 255, 0.06)",
-                color: "inherit",
-                cursor: "pointer",
-                fontWeight: 700,
-              }}
+              className="btn btn-secondary"
             >
               Cancel
             </button>
