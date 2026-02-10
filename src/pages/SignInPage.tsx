@@ -73,7 +73,7 @@ export default function SignInPage() {
       <div className="auth-container">
         <h1 className="auth-heading">Sign in</h1>
         <p className="auth-description">
-          Enter your username to sign in.
+          Enter your username.
         </p>
 
         <form onSubmit={onSubmit} className="auth-form">
@@ -106,7 +106,7 @@ export default function SignInPage() {
           <p className="auth-link">
             Don't have an account?{" "}
             <Link to="/create-account" className="auth-link-button">
-              Create one
+              Create account
             </Link>
           </p>
         </div>

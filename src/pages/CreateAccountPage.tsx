@@ -76,7 +76,7 @@ export default function CreateAccountPage() {
       <div className="auth-container">
         <h1 className="auth-heading">Create account</h1>
         <p className="auth-description">
-          Choose a username to create your account.
+          Choose a username.
         </p>
 
         <form onSubmit={onSubmit} className="auth-form">
