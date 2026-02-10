@@ -7,6 +7,7 @@ import { isOverlayRoute } from "./utils/overlayRoutes";
 
 const SHARED_GAME_KEY = "__gather_phaser_game__";
 const SHARED_GAME_CLEANUP_TIMER_KEY = "__gather_phaser_game_cleanup_timer__";
+const IS_DEV = process.env.NODE_ENV !== "production";
 
 function getSharedGame(): Phaser.Game | null {
   return ((globalThis as any)[SHARED_GAME_KEY] as Phaser.Game | null) ?? null;
@@ -27,10 +28,6 @@ function clearDevCleanupTimer() {
 function scheduleDevCleanup(fn: () => void, delayMs: number) {
   clearDevCleanupTimer();
   (globalThis as any)[SHARED_GAME_CLEANUP_TIMER_KEY] = setTimeout(fn, delayMs) as any as number;
-}
-
-function isHotDev(): boolean {
-  return Boolean((import.meta as any)?.hot);
 }
 
 function ensureGameAttached(game: Phaser.Game, containerId: string) {
@@ -64,7 +61,7 @@ function GamePage() {
       if (!game) return;
       gameRef.current = null;
 
-      if (isHotDev()) {
+      if (IS_DEV) {
         // In dev/HMR + React StrictMode, avoid destroying the game during the "test unmount"
         // so we don't create a second instance (which can lead to AudioContext errors).
         scheduleDevCleanup(() => {
