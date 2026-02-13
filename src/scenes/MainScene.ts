@@ -4,6 +4,27 @@ import { GroundFloor } from "./maps/GroundFloor";
 const PLAYER_SPEED = 200;
 const PLAYER_SIZE = 50;
 
+const temporaryMap = `
+-0007,-0003 ob
++0005,-0005 ob
++0005,+0001 ob
++0000,-0001
+-0005,-0007
++0002,-0007
+-0002,-0004
++0002,-0005
+-0005,+0005
+-0006,+0002
++0003,+0002
++0001,+0005
++0006,+0000
+-0008,+0000 ob
+-0008,-0007 ob
++0002,-0009 ob
++0008,-0004 ob
+-0003,+0007 ob
+`;
+
 /**
  * MainScene - The primary game scene for the Neumont Virtual Campus
  * Features the ground floor layout with multiple rooms and collision detection
@@ -27,14 +48,15 @@ export class MainScene extends Phaser.Scene {
   }
 
   create(): void {
-    // Create walls group for physics
-    const walls = this.physics.add.staticGroup();
+    // Create tiles group for physics
+    const tiles = this.physics.add.staticGroup();
+    const groundFloor = new GroundFloor(temporaryMap);
 
     // Create ground floor layout from map file
-    GroundFloor.createWalls(this, walls);
+    groundFloor.createTiles(this, tiles);
 
     // Get spawn position from map
-    const spawnPos = GroundFloor.getSpawnPosition();
+    const spawnPos = groundFloor.getSpawnPosition();
 
     // Create player (blue square)
     this.player = this.add.rectangle(
@@ -48,10 +70,9 @@ export class MainScene extends Phaser.Scene {
     // Enable physics on player
     this.physics.add.existing(this.player);
     const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
-    playerBody.setCollideWorldBounds(true);
 
-    // Set up collision between player and walls
-    this.physics.add.collider(this.player, walls);
+    // Set up collision between player and tiles
+    this.physics.add.collider(this.player, tiles);
 
     // Set up keyboard controls
     this.cursors = this.input.keyboard!.createCursorKeys();
@@ -65,10 +86,6 @@ export class MainScene extends Phaser.Scene {
     // Configure camera to follow player
     this.cameras.main.startFollow(this.player);
     this.cameras.main.setZoom(1.0);
-    this.cameras.main.setBounds(0, 0, GroundFloor.WIDTH, GroundFloor.HEIGHT);
-
-    // Set physics world bounds to match map
-    this.physics.world.setBounds(0, 0, GroundFloor.WIDTH, GroundFloor.HEIGHT);
   }
 
   override update(): void {
