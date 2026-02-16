@@ -201,6 +201,9 @@ export class MainScene extends Phaser.Scene {
     // Update NPC system
     this.npcManager.update(this.player);
 
+    // Check quiz terminal interaction (same timing as NPC interaction)
+    this.checkQuizTerminalInteraction();
+
     const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
 
     // Handle Escape key to close dialogue
@@ -237,7 +240,18 @@ export class MainScene extends Phaser.Scene {
     } else {
       playerBody.setVelocityY(0);
     }
+  }
 
+  /**
+   * Check if player can interact with quiz terminal
+   * Called at the same timing as NPC interaction checks
+   */
+  private checkQuizTerminalInteraction(): void {
+    if (!this.player || !this.interactKey) {
+      return;
+    }
+
+    // Check if player is near terminal
     const isNearTerminal =
       Boolean(
         this.quizTerminalZone &&
@@ -253,16 +267,18 @@ export class MainScene extends Phaser.Scene {
         ) <= 90,
       );
 
+    // Update prompt visibility
     if (this.quizPromptText) {
       this.quizPromptText.setVisible(isNearTerminal);
     }
 
+    // Check E key press (same pattern as NPCManager)
     if (
       isNearTerminal &&
-      this.interactKey &&
       Phaser.Input.Keyboard.JustDown(this.interactKey)
     ) {
-      console.log("[quiz] dailyQuiz:start dispatched");
+      console.log("[MainScene] ✅ E key pressed near terminal!");
+      console.log("[MainScene] Dispatching dailyQuiz:start event");
       window.dispatchEvent(new CustomEvent("dailyQuiz:start"));
     }
   }

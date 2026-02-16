@@ -102,14 +102,53 @@
   margin-bottom: 8px;
 }
 
+/* Avatar and Username Row */
+.player-profile-user-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.player-profile-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid #3a3a3a;
+  background: rgba(58, 58, 58, 0.4);
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  transition: border-color 0.2s ease;
+}
+
+.player-profile:hover .player-profile-avatar {
+  border-color: #FFDD00;
+}
+
+.player-profile-user-info {
+  flex: 1;
+  min-width: 0;
+}
+
 .player-profile-username {
   font-size: 16px;
   font-weight: 700;
   color: #ffffff;
-  margin: 0 0 10px 0;
+  margin: 0;
   font-family: 'DIN 2014', 'Arial Narrow', 'Arial', sans-serif;
   line-height: 1.3;
   text-transform: lowercase;
+}
+
+.player-profile-display-name {
+  font-size: 12px;
+  font-weight: 400;
+  color: #a8a8ad;
+  margin-top: 2px;
+  font-family: 'DIN 2014', 'Arial Narrow', 'Arial', sans-serif;
+  line-height: 1.2;
 }
 
 /* Points Display */

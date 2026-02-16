@@ -22,6 +22,11 @@ export default function QuizPanel(props: { isOpen: boolean; onClose: () => void 
   const isAdmin = auth.mode === "admin";
   const username = auth.me?.username ?? "Guest";
 
+  // Debug: Log when isOpen prop changes
+  useEffect(() => {
+    console.log(`[QuizPanel] isOpen prop changed to: ${isOpen}`);
+  }, [isOpen]);
+
   const [tab, setTab] = useState<Tab>("quiz");
   const panelRef = useRef<HTMLDivElement | null>(null);
   const quizModalCloseRef = useRef<null | (() => void)>(null);

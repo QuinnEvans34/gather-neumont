@@ -2,11 +2,11 @@ import { useEffect, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import Phaser from "phaser";
 import createGame from "./game.ts";
-import { appEvents } from "./events/appEvents";
 import { isOverlayRoute } from "./utils/overlayRoutes";
 import DialogueUI from "./components/DialogueUI.tsx";
 import QuestTracker from "./components/QuestTracker.tsx";
 import PlayerProfile from "./components/PlayerProfile.tsx";
+import QuizPanel from "./ui/quiz/QuizPanel.tsx";
 import { useQuestData, useSelectedQuest } from "./hooks/useQuestData.ts";
 import { usePlayerData } from "./hooks/usePlayerData.ts";
 import { doc, updateDoc, arrayRemove } from "firebase/firestore";
@@ -133,6 +133,31 @@ function GamePage() {
     }
   }, [error, playerError]);
 
+  // Listen for daily quiz start event from game world
+  useEffect(() => {
+    console.log("[Game] Setting up dailyQuiz:start event listener");
+
+    const handleDailyQuizStart = () => {
+      console.log("[Game] ✅ Daily quiz start event received!");
+      console.log("[Game] Setting isDailyQuizOpen to true");
+      setIsDailyQuizOpen(true);
+    };
+
+    window.addEventListener("dailyQuiz:start", handleDailyQuizStart);
+    console.log("[Game] Event listener attached to window");
+
+    return () => {
+      console.log("[Game] Removing dailyQuiz:start event listener");
+      window.removeEventListener("dailyQuiz:start", handleDailyQuizStart);
+    };
+  }, []);
+
+  // Debug: Log when isDailyQuizOpen changes
+  useEffect(() => {
+    console.log(`[Game] isDailyQuizOpen changed to: ${isDailyQuizOpen}`);
+  }, [isDailyQuizOpen]);
+
+  // Disable keyboard input when quiz is open or overlay route is active
   useEffect(() => {
     const game = gameRef.current;
     if (!game) return;
@@ -140,9 +165,17 @@ function GamePage() {
     const isOverlayRouteActive = isOverlayRoute(location.pathname);
     const enabled = !isOverlayRouteActive && !isDailyQuizOpen;
 
+    console.log(`[Game] Keyboard state update:`, {
+      isOverlayRouteActive,
+      isDailyQuizOpen,
+      enabled,
+      pathname: location.pathname
+    });
+
     const keyboard = (game as any).input?.keyboard as Phaser.Input.Keyboard.KeyboardPlugin | undefined;
     if (keyboard) {
       keyboard.enabled = enabled;
+      console.log(`[Game] Main keyboard.enabled set to: ${enabled}`);
     }
 
     // Also toggle any active scene keyboard plugins (defensive).
@@ -152,18 +185,10 @@ function GamePage() {
         | undefined;
       if (sceneKeyboard) {
         sceneKeyboard.enabled = enabled;
+        console.log(`[Game] Scene "${scene.scene.key}" keyboard.enabled set to: ${enabled}`);
       }
     }
   }, [isDailyQuizOpen, location.pathname]);
-
-  useEffect(() => {
-    const offDailyQuizOpen = appEvents.onDailyQuizOpenChanged((isOpen) => {
-      setIsDailyQuizOpen(isOpen);
-    });
-    return () => {
-      offDailyQuizOpen();
-    };
-  }, []);
 
   return (
     <div className="game-wrapper" style={{ position: "fixed", inset: 0 }}>
@@ -190,6 +215,12 @@ function GamePage() {
         onRemoveQuest={handleRemoveQuest}
         onCompleteQuest={handleCompleteQuest}
         loading={loading}
+      />
+
+      {/* Daily Quiz Popup */}
+      <QuizPanel
+        isOpen={isDailyQuizOpen}
+        onClose={() => setIsDailyQuizOpen(false)}
       />
     </div>
   );

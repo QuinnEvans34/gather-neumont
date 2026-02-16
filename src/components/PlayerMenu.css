@@ -147,6 +147,51 @@
   gap: 32px;
 }
 
+/* Profile Header with Avatar */
+.player-menu-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 24px;
+  background: rgba(58, 58, 58, 0.3);
+  border-left: 4px solid #FFDD00;
+}
+
+.player-menu-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 3px solid #FFDD00;
+  background: rgba(58, 58, 58, 0.4);
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 0 16px rgba(255, 221, 0, 0.3);
+}
+
+.player-menu-profile-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.player-menu-profile-username {
+  font-size: 20px;
+  font-weight: 700;
+  color: #FFDD00;
+  font-family: 'DIN 2014', 'Arial Narrow', 'Arial', sans-serif;
+  line-height: 1.3;
+  margin-bottom: 4px;
+}
+
+.player-menu-profile-display-name {
+  font-size: 16px;
+  font-weight: 400;
+  color: #ffffff;
+  font-family: 'DIN 2014', 'Arial Narrow', 'Arial', sans-serif;
+  line-height: 1.3;
+}
+
 /* Custom scrollbar */
 .player-menu-content::-webkit-scrollbar {
   width: 8px;
@@ -292,6 +337,63 @@
   text-align: center;
 }
 
+/* Actions Section */
+.player-menu-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 2px solid #3a3a3a;
+}
+
+.player-menu-action-btn {
+  cursor: pointer;
+  border-radius: 0;
+  border: 2px solid #3a3a3a;
+  background: rgba(58, 58, 58, 0.3);
+  color: #ffffff;
+  padding: 14px 20px;
+  font-family: 'DIN 2014', 'Arial Narrow', 'Arial', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.player-menu-action-btn:hover {
+  background: rgba(58, 58, 58, 0.5);
+  border-color: #FFDD00;
+  color: #FFDD00;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 221, 0, 0.2);
+}
+
+.player-menu-action-btn.primary {
+  background: #FFDD00;
+  color: #1F1F1F;
+  border-color: #FFDD00;
+}
+
+.player-menu-action-btn.primary:hover {
+  background: #f7b235;
+  border-color: #f7b235;
+  color: #1F1F1F;
+  box-shadow: 0 4px 12px rgba(255, 221, 0, 0.4);
+}
+
+.player-menu-notice {
+  font-size: 12px;
+  color: #888;
+  line-height: 1.4;
+  padding: 12px;
+  background: rgba(58, 58, 58, 0.3);
+  border-left: 3px solid #FFDD00;
+  font-family: 'DIN 2014', 'Arial Narrow', 'Arial', sans-serif;
+  text-align: center;
+}
+
 /* Footer */
 .player-menu-footer {
   padding: 16px 32px;
@@ -328,6 +430,25 @@
     gap: 24px;
   }
 
+  .player-menu-profile-header {
+    flex-direction: column;
+    text-align: center;
+    padding: 20px;
+  }
+
+  .player-menu-avatar {
+    width: 64px;
+    height: 64px;
+  }
+
+  .player-menu-profile-username {
+    font-size: 18px;
+  }
+
+  .player-menu-profile-display-name {
+    font-size: 14px;
+  }
+
   .player-menu-info-grid {
     grid-template-columns: 1fr;
   }
@@ -338,6 +459,11 @@
 
   .player-menu-points-value {
     font-size: 28px;
+  }
+
+  .player-menu-action-btn {
+    padding: 12px 16px;
+    font-size: 13px;
   }
 }
 
