@@ -12,7 +12,6 @@ export default function ProfileStep() {
   const navigate = useNavigate();
 
   const [displayName, setDisplayName] = useState(profile.profileDraft.displayName);
-  const [email, setEmail] = useState(profile.profileDraft.email ?? "");
 
   const canContinue = useMemo(() => {
     return displayName.trim().length > 0;
@@ -25,12 +24,10 @@ export default function ProfileStep() {
     const nextDraft = {
       ...profile.profileDraft,
       displayName: displayName.trim(),
-      email: email.trim() ? email.trim() : undefined,
     };
 
     profile.setProfileDraft({
       displayName: nextDraft.displayName,
-      email: nextDraft.email,
     });
 
     // Guests never call the server. Logged-in users can attempt a save, but it must not block onboarding.
@@ -68,19 +65,6 @@ export default function ProfileStep() {
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               placeholder="Alex"
-              className="form-input"
-            />
-          </div>
-
-          <div className="form-field">
-            <label htmlFor="email" className="form-label">Email (optional)</label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="alex@example.com"
-              autoComplete="email"
               className="form-input"
             />
           </div>

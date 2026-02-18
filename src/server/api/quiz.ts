@@ -3,6 +3,8 @@
  * GET  /api/quiz/today  - Check if there's a quiz available today
  * POST /api/quiz/start  - Start today's quiz and get the question
  * POST /api/quiz/submit - Submit an answer for today's quiz
+ *
+ * UPDATED: Now integrates with Firebase for quiz completion persistence
  */
 
 import { getMountainDateKey } from "../utils/timezone";
@@ -26,6 +28,11 @@ import { calculatePoints } from "../services/scoring.service";
 import type { Question } from "../../types/quiz.types";
 import { getUserIdFromRequest } from "./auth";
 import { getUserById } from "../data/users.store";
+import {
+  saveQuizCompletionToPuzzleDay,
+  saveQuizCompletionToPlayer,
+} from "../services/firebase-quiz-completion.service";
+import { FirestoreQueries } from "../../lib/firestore-helpers";
 
 const userAttemptCounts = new Map<string, number>();
 
@@ -298,6 +305,13 @@ export async function handleSubmitQuiz(req: Request): Promise<Response> {
 
   // Check the answer
   const checkResult = checkAnswer(todayQuestion, answer);
+  console.log(`[quiz] 🔍 Answer check:`, {
+    questionId: todayQuestion.id,
+    questionType: todayQuestion.type,
+    answer,
+    checkResult,
+    attemptNumber
+  });
 
   if (!checkResult.correct) {
     // Update attempt count in session
@@ -373,6 +387,43 @@ export async function handleSubmitQuiz(req: Request): Promise<Response> {
       },
     };
     await saveProgress(updated);
+
+    // Save completion to Firebase
+    try {
+      // Extract puzzle ID from question ID (format: {puzzleId}_q{index})
+      const puzzleId = todayQuestion.id.split("_")[0];
+
+      // Get player's Firebase document ID by username
+      const user = await getUserById(resolvedUserId);
+      if (user?.username) {
+        const player = await FirestoreQueries.getPlayerByUsername(user.username);
+        if (player) {
+          console.log(`[quiz] Saving Firebase completion for player: ${player.Username} (${player.id})`);
+
+          // Save to PuzzleDay subcollection
+          await saveQuizCompletionToPuzzleDay(
+            puzzleId,
+            player.id,
+            pointsBreakdown.totalPoints,
+            elapsedMs
+          );
+
+          // Save to Player.PuzzleRecord and update Wallet
+          await saveQuizCompletionToPlayer(
+            player.id,
+            puzzleId,
+            pointsBreakdown.totalPoints
+          );
+
+          console.log(`[quiz] ✅ Firebase completion saved successfully - ${pointsBreakdown.totalPoints} points awarded`);
+        } else {
+          console.warn(`[quiz] Player not found in Firebase for username: ${user.username}`);
+        }
+      }
+    } catch (error) {
+      console.error(`[quiz] ❌ Error saving to Firebase:`, error);
+      // Don't fail the request if Firebase save fails
+    }
   }
   if (resolvedUserId) {
     userAttemptCounts.delete(getAttemptKey(resolvedUserId, dateKey));

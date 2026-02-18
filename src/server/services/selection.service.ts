@@ -1,9 +1,11 @@
 /**
  * Daily question selection service.
  * Deterministically selects a question for a given date.
+ *
+ * UPDATED: Now uses Firebase Quiz puzzles instead of JSON files
  */
 
-import { getAllQuestions } from "../data/questions.store";
+import { getAllQuizQuestions } from "./firebase-quiz.service";
 import {
   addScheduleEntry,
   getScheduleEntries,
@@ -92,16 +94,21 @@ function logDuplicateIds(questions: Question[]): void {
  * Get the question for a specific date.
  * Uses schedule-based selection (write-once per date).
  * Returns null if no questions are available.
+ *
+ * UPDATED: Now fetches from Firebase Quiz puzzles
  */
 export async function getQuestionForDate(
   dateKey: string
 ): Promise<Question | null> {
-  const questions = await getAllQuestions();
+  console.log(`[selection] Getting question for date: ${dateKey}`);
+  const questions = await getAllQuizQuestions();
 
   if (questions.length === 0) {
+    console.warn(`[selection] No quiz questions available from Firebase`);
     return null;
   }
 
+  console.log(`[selection] Loaded ${questions.length} questions from Firebase`);
   logDuplicateIds(questions);
 
   const scheduleEntries = await getScheduleEntries();

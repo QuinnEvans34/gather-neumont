@@ -117,6 +117,9 @@ export interface PuzzleDay extends FirestoreDocument {
 
   /** Top ten player UIDs (corresponding to topScore) */
   topTen: string[];
+
+  /** Completion time in milliseconds (optional, for quiz completion tracking) */
+  completionTimeMs?: number;
 }
 
 // ============================================================================
@@ -178,18 +181,36 @@ export interface NPC extends FirestoreDocument {
 export interface OwnedCosmetics {
   /** Array of hat cosmetic IDs */
   Hat: string[];
-  
+
   /** Array of shirt cosmetic IDs */
   Shirt: string[];
-  
+
   /** Array of shoe cosmetic IDs */
   Shoes: string[];
-  
+
   /** Array of accessory cosmetic IDs */
   Accessories: string[];
-  
+
   /** Array of pant cosmetic IDs */
   Pants: string[];
+}
+
+/**
+ * Puzzle completion record entry for Player.PuzzleRecord
+ * Tracks individual puzzle completions with metadata
+ */
+export interface PuzzleRecordEntry {
+  /** Puzzle document ID */
+  puzzleId: string;
+
+  /** Score achieved */
+  score: number;
+
+  /** Completion time in milliseconds */
+  completionTimeMs: number;
+
+  /** Timestamp when completed */
+  completedAt: Timestamp;
 }
 
 /**

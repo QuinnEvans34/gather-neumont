@@ -232,6 +232,20 @@ export const FirestoreQueries = {
       COLLECTIONS.PUZZLE_DAY
     );
   },
+
+  /**
+   * Get all Quiz-type puzzles
+   */
+  async getQuizPuzzles() {
+    return queryDocuments(COLLECTIONS.PUZZLE, where("Type", "==", "Quiz"));
+  },
+
+  /**
+   * Get all Code-type puzzles
+   */
+  async getCodePuzzles() {
+    return queryDocuments(COLLECTIONS.PUZZLE, where("Type", "==", "Code"));
+  },
 };
 
 /**

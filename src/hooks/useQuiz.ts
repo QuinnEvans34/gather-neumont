@@ -200,7 +200,12 @@ export function useQuiz(): UseQuizReturn {
         return null;
       }
 
-      console.log(`[useQuiz] 📤 Submitting answer:`, { questionId: question.id, answer });
+      console.log(`[useQuiz] 📤 Submitting answer:`, {
+        questionId: question.id,
+        questionType: question.type,
+        answer,
+        attemptNumber: attemptNumber + 1
+      });
       setState("submitting");
 
       // Calculate elapsed time

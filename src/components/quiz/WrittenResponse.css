@@ -1,4 +1,7 @@
-/* Written Response - Apple/Enterprise Text Input */
+/**
+ * Written Response - Neumont Brand Identity
+ * Industrial tech text input with yellow accents
+ */
 
 .written-response-container {
   display: flex;
@@ -8,37 +11,37 @@
 
 .written-response-input {
   width: 100%;
-  padding: 14px 18px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  color: var(--text);
+  padding: 16px 20px;
+  background: rgba(58, 58, 58, 0.3);
+  border: 2px solid #3a3a3a;
+  border-left: 3px solid #FFDD00;
+  border-radius: 0;
+  color: #f0f0f0;
   font-size: 15px;
-  font-family: system-ui, -apple-system, 'SF Pro Display', sans-serif;
+  font-family: 'DIN 2014', 'Arial Narrow', 'Arial', sans-serif;
   outline: none;
-  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
 }
 
 .written-response-input:hover:not(:disabled) {
-  border-color: rgba(255, 255, 255, 0.12);
-  background: var(--surface-hover);
+  border-color: #FFDD00;
+  background: rgba(58, 58, 58, 0.5);
 }
 
 .written-response-input:focus {
-  border-color: var(--accent);
-  background: var(--surface-hover);
-  box-shadow: 0 0 0 3px rgba(107, 126, 188, 0.15);
+  border-color: #FFDD00;
+  background: rgba(58, 58, 58, 0.5);
+  box-shadow: 0 0 12px rgba(255, 221, 0, 0.3);
 }
 
 .written-response-input::placeholder {
-  color: var(--text-muted);
+  color: #888;
 }
 
 .written-response-input.incorrect {
-  border-color: var(--danger);
-  border-left-width: 3px;
-  padding-left: 16px;
-  background: rgba(214, 94, 94, 0.06);
+  border-color: #d65e5e;
+  border-left-color: #d65e5e;
+  background: rgba(214, 94, 94, 0.1);
 }
 
 .written-response-input.shake {
@@ -46,41 +49,46 @@
 }
 
 .written-response-input:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
 }
 
-/* Accepted Answers Section */
+/* Accepted Answers Section - Industrial Tech */
 .written-response-answers {
   margin-top: 16px;
-  padding: 16px 18px;
-  border-radius: 10px;
-  border: 1px solid rgba(82, 201, 124, 0.3);
-  background: rgba(82, 201, 124, 0.08);
+  padding: 18px 20px;
+  border-radius: 0;
+  border: 2px solid rgba(82, 201, 124, 0.4);
+  border-left: 3px solid #52c97c;
+  background: rgba(82, 201, 124, 0.1);
 }
 
 .written-response-label {
   display: block;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
   text-transform: uppercase;
-  color: var(--success);
+  color: #52c97c;
   margin-bottom: 12px;
+  font-family: 'DIN 2014', 'Arial Narrow', 'Arial', sans-serif;
 }
 
 .written-response-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
 }
 
 .written-response-pill {
-  padding: 6px 12px;
-  border-radius: 7px;
-  background: rgba(82, 201, 124, 0.12);
-  border: 1px solid rgba(82, 201, 124, 0.25);
-  color: var(--success);
+  padding: 8px 14px;
+  border-radius: 0;
+  background: rgba(82, 201, 124, 0.15);
+  border: 2px solid rgba(82, 201, 124, 0.3);
+  color: #52c97c;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 700;
+  font-family: 'DIN 2014', 'Arial Narrow', 'Arial', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }

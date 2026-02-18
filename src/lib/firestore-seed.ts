@@ -811,60 +811,69 @@ async function seedPlayers() {
 
 /**
  * Seed PuzzleWeek collection with subcollections
- * Structure: PuzzleWeek/weeks/Jan20261/{dayDocuments}
+ * Structure: PuzzleWeek/weeks/{weekId}/{dayDocuments}
+ *
+ * UPDATED: Now seeds multiple weeks including February 2026
  */
 async function seedPuzzleWeeks() {
   const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
-  const puzzleDays: Array<Omit<PuzzleDay, "id">> = [
-    {
-      dow: daysOfWeek[0],
-      puzzle: createdIds.puzzles[0],
-      topScore: [10000, 8500, 7200],
-      topTen: ["player_uid_1", "player_uid_2", "player_uid_3"]
-    },
-    {
-      dow: daysOfWeek[1],
-      puzzle: createdIds.puzzles[1],
-      topScore: [9500, 7800, 6900],
-      topTen: ["player_uid_4", "player_uid_5", "player_uid_6"]
-    },
-    {
-      dow: daysOfWeek[2],
-      puzzle: createdIds.puzzles[2],
-      topScore: [11000, 9200, 8100],
-      topTen: ["player_uid_7", "player_uid_8", "player_uid_9"]
-    },
-    {
-      dow: daysOfWeek[3],
-      puzzle: createdIds.puzzles[3],
-      topScore: [8800, 7500, 6400],
-      topTen: ["player_uid_10", "player_uid_11", "player_uid_12"]
-    },
-    {
-      dow: daysOfWeek[4],
-      puzzle: createdIds.puzzles[4],
-      topScore: [12000, 10500, 9300],
-      topTen: ["player_uid_13", "player_uid_14", "player_uid_15"]
-    },
+  const parentDocId = "weeks";
+
+  // Define multiple weeks to seed
+  const weeksToSeed = [
+    { weekId: "Jan20261", label: "January 2026 Week 1" },
+    { weekId: "Feb20263", label: "February 2026 Week 3" },
+    { weekId: "Feb20264", label: "February 2026 Week 4" },
   ];
 
-  // Structure: PuzzleWeek/weeks/Jan20261/{documents}
-  // "weeks" is a parent document (empty container)
-  // "Jan20261" is the subcollection name
-  const parentDocId = "weeks";
-  const weekId = "Jan20261";
+  for (const week of weeksToSeed) {
+    const puzzleDays: Array<Omit<PuzzleDay, "id">> = [
+      {
+        dow: daysOfWeek[0],
+        puzzle: createdIds.puzzles[0],
+        topScore: [10000, 8500, 7200],
+        topTen: ["player_uid_1", "player_uid_2", "player_uid_3"]
+      },
+      {
+        dow: daysOfWeek[1],
+        puzzle: createdIds.puzzles[1],
+        topScore: [9500, 7800, 6900],
+        topTen: ["player_uid_4", "player_uid_5", "player_uid_6"]
+      },
+      {
+        dow: daysOfWeek[2],
+        puzzle: createdIds.puzzles[2],
+        topScore: [11000, 9200, 8100],
+        topTen: ["player_uid_7", "player_uid_8", "player_uid_9"]
+      },
+      {
+        dow: daysOfWeek[3],
+        puzzle: createdIds.puzzles[3],
+        topScore: [8800, 7500, 6400],
+        topTen: ["player_uid_10", "player_uid_11", "player_uid_12"]
+      },
+      {
+        dow: daysOfWeek[4],
+        puzzle: createdIds.puzzles[4],
+        topScore: [12000, 10500, 9300],
+        topTen: ["player_uid_13", "player_uid_14", "player_uid_15"]
+      },
+    ];
 
-  for (let i = 0; i < puzzleDays.length; i++) {
-    await addSubcollectionDocument<PuzzleDay>(
-      COLLECTIONS.PUZZLE_WEEK,
-      parentDocId,
-      weekId,
-      puzzleDays[i]
-    );
-    stats.puzzleWeeks++;
+    for (let i = 0; i < puzzleDays.length; i++) {
+      await addSubcollectionDocument<PuzzleDay>(
+        COLLECTIONS.PUZZLE_WEEK,
+        parentDocId,
+        week.weekId,
+        puzzleDays[i]
+      );
+      stats.puzzleWeeks++;
+    }
+
+    console.log(`   ✅ Created ${puzzleDays.length} puzzle days in ${week.label} (${week.weekId})`);
   }
 
-  console.log(`   ✅ Created ${stats.puzzleWeeks} puzzle week documents in ${weekId} subcollection`);
+  console.log(`   ✅ Total puzzle week documents created: ${stats.puzzleWeeks}`);
 }
 
 /**

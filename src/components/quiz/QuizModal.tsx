@@ -257,7 +257,9 @@ export function QuizModal({
   const handleSubmit = useCallback(
     async (answer: unknown) => {
       if (mode === "daily") {
-        await quiz.submitAnswer(answer);
+        console.log("[QuizModal] 📤 Submitting answer to daily quiz:", answer);
+        const result = await quiz.submitAnswer(answer);
+        console.log("[QuizModal] 📦 Submit result:", result);
         return;
       }
       if (!testQuestion) return;
@@ -906,6 +908,11 @@ export function QuizModal({
           acceptedAnswers={quiz.lastResult.acceptedAnswers}
           attemptNumber={quiz.attemptNumber}
           onViewLeaderboard={onViewLeaderboard ? handleViewLeaderboard : undefined}
+          onReset={() => {
+            console.log("[QuizModal] 🔄 Resetting quiz...");
+            quiz.reset();
+            quiz.startQuiz();
+          }}
         />
       );
     }
