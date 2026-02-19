@@ -2,9 +2,9 @@ import type { FormEvent } from "react";
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { putProfile } from "../../api/profileApi";
+import NeumontPanelShell from "../../components/NeumontPanelShell";
 import { useAuth } from "../../features/auth/AuthContext";
 import { useProfile } from "../../features/profile/ProfileContext";
-import "../../styles/auth-onboarding.css";
 
 export default function ProfileStep() {
   const auth = useAuth();
@@ -53,47 +53,46 @@ export default function ProfileStep() {
   }
 
   return (
-    <div className="onboarding-overlay">
-      <div className="onboarding-container">
-        <h1 className="onboarding-heading">Your Profile</h1>
-        <p className="onboarding-description">
-          Tell us a bit about yourself to get started.
-        </p>
+    <NeumontPanelShell title="Your Profile" maxWidth={560}>
+      <p className="quest-menu-auth-subtitle">
+        Tell us a bit about yourself to get started.
+      </p>
 
-        <form onSubmit={onSubmit} className="onboarding-form">
-          <div className="form-field">
-            <label htmlFor="displayName" className="form-label">Display name</label>
-            <input
-              id="displayName"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="Alex"
-              className="form-input"
-            />
-          </div>
+      <form onSubmit={onSubmit} className="quest-menu-auth-form">
+        <div className="quest-menu-auth-field">
+          <label htmlFor="displayName" className="quest-menu-auth-label">Display Name</label>
+          <input
+            id="displayName"
+            value={displayName}
+            onChange={(e) => setDisplayName(e.target.value)}
+            placeholder="Alex"
+            className="quest-menu-auth-input"
+          />
+        </div>
 
-          <div className="form-field">
-            <label htmlFor="email" className="form-label">Email (optional)</label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="alex@example.com"
-              autoComplete="email"
-              className="form-input"
-            />
-          </div>
+        <div className="quest-menu-auth-field">
+          <label htmlFor="email" className="quest-menu-auth-label">Email (Optional)</label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="alex@example.com"
+            autoComplete="email"
+            className="quest-menu-auth-input"
+          />
+        </div>
 
+        <div className="quest-menu-action-group">
           <button
             type="submit"
             disabled={!canContinue}
-            className="btn btn-primary"
+            className="quest-menu-action-btn quest-menu-action-btn--primary"
           >
             Continue
           </button>
-        </form>
-      </div>
-    </div>
+        </div>
+      </form>
+    </NeumontPanelShell>
   );
 }

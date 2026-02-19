@@ -38,7 +38,6 @@ export default function OverlayLayout() {
 
   useEffect(() => {
     function onDailyQuizStart(_event: Event) {
-      console.log("[quiz] dailyQuiz:start received");
       appEvents.emitOpenDailyQuiz();
     }
 

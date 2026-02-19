@@ -12,7 +12,6 @@ interface QuizResultProps {
   explanation?: string;
   correctIndex?: number;
   correctIndices?: number[];
-  acceptedAnswers?: string[];
   attemptNumber: number;
   onViewLeaderboard?: () => void;
 }
@@ -24,7 +23,6 @@ export function QuizResult({
   explanation,
   correctIndex,
   correctIndices,
-  acceptedAnswers,
   attemptNumber,
   onViewLeaderboard,
 }: QuizResultProps) {
@@ -41,9 +39,6 @@ export function QuizResult({
           return `${letter}. ${question.choices?.[i] ?? ""}`;
         })
         .join(", ");
-    }
-    if (question.type === "written" && acceptedAnswers) {
-      return acceptedAnswers[0] ?? "";
     }
     return "";
   };

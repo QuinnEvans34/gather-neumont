@@ -28,9 +28,8 @@ async function requireAdmin(req: Request): Promise<Response | null> {
   return null;
 }
 
-function logValidationFailure(endpoint: string, reason: string, id?: string) {
-  const suffix = id ? ` id=${id}` : "";
-  console.log(`[admin] ${endpoint} validation failed: ${reason}${suffix}`);
+function logValidationFailure(_endpoint: string, _reason: string, _id?: string) {
+  // Intentionally no-op in production paths.
 }
 
 function getCorrectAnswerInfo(question: Question): Record<string, unknown> {
@@ -39,8 +38,6 @@ function getCorrectAnswerInfo(question: Question): Record<string, unknown> {
       return { correctIndex: question.correctIndex };
     case "select-all":
       return { correctIndices: question.correctIndices };
-    case "written":
-      return { acceptedAnswers: question.acceptedAnswers };
     default:
       return {};
   }
@@ -196,7 +193,6 @@ async function handleTestSubmit(req: Request): Promise<Response> {
 
   const { questionId, answer, elapsedMs } = body;
   if (!questionId) {
-    console.log("[admin] POST /api/admin/test/submit missing questionId");
     return Response.json({ error: "questionId is required" }, { status: 400 });
   }
   if (typeof elapsedMs !== "number") {

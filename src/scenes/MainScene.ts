@@ -7,6 +7,7 @@ import { GameEventBridge } from "../systems/GameEventBridge";
 
 const PLAYER_SPEED = 200;
 const PLAYER_SIZE = 50;
+const QUIZ_INTERACT_RADIUS = 100;
 
 const temporaryMap = `
 -0007,-0003 ob
@@ -48,10 +49,9 @@ export class MainScene extends Phaser.Scene {
   private bridge!: GameEventBridge;
   private playerState: "EXPLORING" | "DIALOGUE" = "EXPLORING";
   private escapeKey!: Phaser.Input.Keyboard.Key;
-  private interactKey!: Phaser.Input.Keyboard.Key;
   private quizTerminal!: Phaser.GameObjects.Rectangle;
-  private quizTerminalZone!: Phaser.GameObjects.Zone;
   private quizPromptText!: Phaser.GameObjects.Text;
+  private quizKeydownHandler?: (event: KeyboardEvent) => void;
 
   constructor() {
     super({ key: "MainScene" });
@@ -99,9 +99,6 @@ export class MainScene extends Phaser.Scene {
     this.escapeKey = this.input.keyboard!.addKey(
       Phaser.Input.Keyboard.KeyCodes.ESC,
     );
-    this.interactKey = this.input.keyboard!.addKey(
-      Phaser.Input.Keyboard.KeyCodes.E,
-    );
 
     // Daily Quiz "terminal" (placeholder interactable)
     const terminalX = spawnPos.x + 120;
@@ -130,10 +127,6 @@ export class MainScene extends Phaser.Scene {
     terminalLabel.setOrigin(0.5);
     terminalLabel.setDepth(3);
 
-    // Overlap zone (slightly larger than the terminal so it feels usable)
-    this.quizTerminalZone = this.add.zone(terminalX, terminalY, 140, 120);
-    this.physics.add.existing(this.quizTerminalZone, true);
-
     this.quizPromptText = this.add.text(
       terminalX,
       terminalY + 54,
@@ -148,6 +141,40 @@ export class MainScene extends Phaser.Scene {
     this.quizPromptText.setOrigin(0.5);
     this.quizPromptText.setVisible(false);
     this.quizPromptText.setDepth(3);
+
+    this.quizKeydownHandler = (event: KeyboardEvent) => {
+      if (event.repeat) {
+        return;
+      }
+
+      const terminalDistance = this.getTerminalDistance();
+      const isNearTerminal = terminalDistance <= QUIZ_INTERACT_RADIUS;
+
+      if (!isNearTerminal || this.playerState === "DIALOGUE") {
+        return;
+      }
+
+      window.dispatchEvent(new CustomEvent("dailyQuiz:start"));
+    };
+
+    this.input.keyboard?.on("keydown-E", this.quizKeydownHandler);
+
+    const cleanupQuizKeydownHandler = () => {
+      if (!this.quizKeydownHandler) {
+        return;
+      }
+      this.input.keyboard?.off("keydown-E", this.quizKeydownHandler);
+      this.quizKeydownHandler = undefined;
+    };
+
+    this.events.once(
+      Phaser.Scenes.Events.SHUTDOWN,
+      cleanupQuizKeydownHandler,
+    );
+    this.events.once(
+      Phaser.Scenes.Events.DESTROY,
+      cleanupQuizKeydownHandler,
+    );
 
     // Configure camera to follow player
     this.cameras.main.startFollow(this.player);
@@ -170,9 +197,6 @@ export class MainScene extends Phaser.Scene {
     this.bridge.on(
       "dialogue:request",
       (data: { npcId: string; treeId: string; startNode: string }) => {
-        console.log(
-          `Dialogue requested: NPC ${data.npcId}, Tree ${data.treeId}`,
-        );
         this.dialogueManager.startDialogue(
           data.npcId,
           data.treeId,
@@ -184,12 +208,10 @@ export class MainScene extends Phaser.Scene {
     // Listen for player state changes
     this.bridge.on("dialogue:start", () => {
       this.playerState = "DIALOGUE";
-      console.log("Player state: DIALOGUE");
     });
 
     this.bridge.on("dialogue:end", () => {
       this.playerState = "EXPLORING";
-      console.log("Player state: EXPLORING");
     });
   }
 
@@ -211,11 +233,16 @@ export class MainScene extends Phaser.Scene {
       this.bridge.emit("dialogue:close", {});
     }
 
+    const terminalDistance = this.getTerminalDistance();
+
+    const isNearTerminal = terminalDistance <= QUIZ_INTERACT_RADIUS;
+
+    if (this.quizPromptText) {
+      this.quizPromptText.setVisible(isNearTerminal);
+    }
+
     // Disable player movement during dialogue
     if (this.playerState === "DIALOGUE") {
-      if (this.quizPromptText) {
-        this.quizPromptText.setVisible(false);
-      }
       playerBody.setVelocity(0, 0);
       return; // Skip movement input
     }
@@ -238,32 +265,14 @@ export class MainScene extends Phaser.Scene {
       playerBody.setVelocityY(0);
     }
 
-    const isNearTerminal =
-      Boolean(
-        this.quizTerminalZone &&
-        this.physics.overlap(this.player, this.quizTerminalZone),
-      ) ||
-      Boolean(
-        this.quizTerminal &&
-        Phaser.Math.Distance.Between(
-          this.player.x,
-          this.player.y,
-          this.quizTerminal.x,
-          this.quizTerminal.y,
-        ) <= 90,
-      );
+  }
 
-    if (this.quizPromptText) {
-      this.quizPromptText.setVisible(isNearTerminal);
-    }
-
-    if (
-      isNearTerminal &&
-      this.interactKey &&
-      Phaser.Input.Keyboard.JustDown(this.interactKey)
-    ) {
-      console.log("[quiz] dailyQuiz:start dispatched");
-      window.dispatchEvent(new CustomEvent("dailyQuiz:start"));
-    }
+  private getTerminalDistance(): number {
+    return Phaser.Math.Distance.Between(
+      this.player.x,
+      this.player.y,
+      this.quizTerminal.x,
+      this.quizTerminal.y,
+    );
   }
 }

@@ -56,11 +56,6 @@ function isValidQuestion(question: Question): boolean {
       return question.correctIndices.every(
         (index) => Number.isInteger(index) && index >= 0 && index < 5
       );
-    case "written":
-      return (
-        Array.isArray(question.acceptedAnswers) &&
-        question.acceptedAnswers.length > 0
-      );
     default:
       return false;
   }
@@ -155,10 +150,9 @@ export async function getQuestionForDate(
  */
 export function stripCorrectAnswers(
   question: Question
-): Omit<Question, "correctIndex" | "correctIndices" | "acceptedAnswers"> & {
+): Omit<Question, "correctIndex" | "correctIndices"> & {
   correctIndex?: never;
   correctIndices?: never;
-  acceptedAnswers?: never;
 } {
   const { ...base } = question;
 
@@ -169,10 +163,6 @@ export function stripCorrectAnswers(
   }
   if ("correctIndices" in base) {
     const { correctIndices, ...rest } = base;
-    return rest as any;
-  }
-  if ("acceptedAnswers" in base) {
-    const { acceptedAnswers, ...rest } = base;
     return rest as any;
   }
 

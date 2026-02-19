@@ -126,9 +126,6 @@ export async function handleStartQuiz(req: Request): Promise<Response> {
   if (resolvedGuestToken) {
     const attemptData = getGuestAttempt(resolvedGuestToken, dateKey);
     if (attemptData?.solved) {
-      console.log(
-        `[quiz] alreadyCompleted start blocked dateKey=${dateKey} guestToken=${resolvedGuestToken}`
-      );
       return Response.json({
         alreadyCompleted: true,
         quizDate: dateKey,
@@ -140,9 +137,6 @@ export async function handleStartQuiz(req: Request): Promise<Response> {
   if (resolvedUserId && !isAdmin) {
     const progress = await getProgressByUserId(resolvedUserId);
     if (progress?.lastCompletion?.date === dateKey) {
-      console.log(
-        `[quiz] alreadyCompleted start blocked dateKey=${dateKey} userId=${resolvedUserId}`
-      );
       return Response.json({
         alreadyCompleted: true,
         quizDate: dateKey,
@@ -183,8 +177,6 @@ function getCorrectAnswerInfo(question: Question): Record<string, unknown> {
       return { correctIndex: question.correctIndex };
     case "select-all":
       return { correctIndices: question.correctIndices };
-    case "written":
-      return { acceptedAnswers: question.acceptedAnswers };
     default:
       return {};
   }
@@ -265,9 +257,6 @@ export async function handleSubmitQuiz(req: Request): Promise<Response> {
 
   // Check if already solved
   if (attemptData?.solved) {
-    console.log(
-      `[quiz] alreadyCompleted submit blocked dateKey=${dateKey} guestToken=${resolvedGuestToken}`
-    );
     return Response.json({
       alreadyCompleted: true,
       quizDate: dateKey,
@@ -279,9 +268,6 @@ export async function handleSubmitQuiz(req: Request): Promise<Response> {
   if (resolvedUserId && !isAdmin) {
     const progress = await getProgressByUserId(resolvedUserId);
     if (progress?.lastCompletion?.date === dateKey) {
-      console.log(
-        `[quiz] alreadyCompleted submit blocked dateKey=${dateKey} userId=${resolvedUserId}`
-      );
       return Response.json({
         alreadyCompleted: true,
         quizDate: dateKey,
@@ -322,7 +308,6 @@ export async function handleSubmitQuiz(req: Request): Promise<Response> {
     if (todayQuestion.type === "select-all" && checkResult.selectedIndices) {
       feedback.selectedIndices = checkResult.selectedIndices;
     }
-    // For written, we don't give extra details on wrong answer
 
     return Response.json({
       correct: false,

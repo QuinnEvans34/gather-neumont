@@ -18,7 +18,7 @@ function getGuestToken(): string {
   return token;
 }
 
-export type QuestionType = "mcq" | "select-all" | "written";
+export type QuestionType = "mcq" | "select-all";
 
 export interface Question {
   id: string;
@@ -53,7 +53,6 @@ export interface SubmitResult {
   explanation?: string;
   correctIndex?: number;
   correctIndices?: number[];
-  acceptedAnswers?: string[];
   quizDate: string;
   rollover?: boolean;
   newQuestion?: Question;
